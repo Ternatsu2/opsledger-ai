@@ -4,7 +4,7 @@ This table lists what the project actually uses. It deliberately excludes propos
 
 | Category | Choice | Use in OpsLedger |
 | --- | --- | --- |
-| Local model | `gpt-5.6-luna`, `xhigh`, through Codex CLI | Optional local structured recommendation; verified against Case A |
+| Local model | `gpt-5.6-luna`, `xhigh`, through Codex CLI | Optional local structured recommendation; verified against all three cases |
 | Hosted model | None | No hosted model API key or remote provider is required |
 | Deterministic provider | `opsledger-rules-2026-08-13` | Reproducible seed/hosted demo output and explicit provider fallback |
 | Embedding model / vector database | None | The small policy pack is versioned Python data; no vector claim |
@@ -16,7 +16,7 @@ This table lists what the project actually uses. It deliberately excludes propos
 | PDF tools | PyMuPDF, ReportLab | Extraction and generated fixtures/review packets |
 | Spreadsheet tools | pandas, openpyxl | CSV/XLSX parsing and synthetic workbook generation |
 | Browser testing | Playwright with installed Chrome/Chromium | Critical desktop and mobile workflows |
-| Hosting target | Terry’s personal Railway workspace | Web, API, PostgreSQL, private demo volume |
+| Hosting | Terry’s personal Railway workspace | Deployed web, API, PostgreSQL, and private synthetic-evidence volume |
 | Runtime data | Project-created synthetic fixtures | Three applications, 11 evidence files, expected-result contracts |
 | External runtime data | None | No bureau, bank, identity, policy, or client feed |
 

@@ -11,11 +11,11 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { z } from "zod";
 
 import { ApiRequestError, apiFetch, idempotencyHeaders } from "@/lib/api";
-import type { CaseRecord } from "@/lib/types";
+import type { CaseRecord, SystemStatus } from "@/lib/types";
 
 const intakeSchema = z.object({
   legal_business_name: z.string().trim().min(2, "Enter the legal business name."),
@@ -99,6 +99,13 @@ export default function NewCasePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(-1);
+  const [publicWritesLocked, setPublicWritesLocked] = useState(false);
+
+  useEffect(() => {
+    void apiFetch<SystemStatus>("/system")
+      .then((status) => setPublicWritesLocked(status.public_writes_locked))
+      .catch(() => undefined);
+  }, []);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -343,13 +350,22 @@ export default function NewCasePage() {
                 The final workflow action remains locked until a reviewer records a rationale.
               </div>
             </div>
+            {publicWritesLocked ? (
+              <div className="notice notice-info">
+                <ShieldCheck size={19} weight="duotone" />
+                <div>
+                  <strong>Public showcase is read-only</strong>
+                  Intake writes require reviewer authorization. The three synthetic cases remain fully inspectable.
+                </div>
+              </div>
+            ) : null}
             <div className="synthetic-note">
               <Info size={16} />
               Use synthetic documents only. Do not upload real personal, bank, or company data.
             </div>
             {submitError ? <div className="notice notice-error">{submitError}</div> : null}
-            <button className="button button-primary submit-intake" type="submit" disabled={busy}>
-              {busy ? <><SpinnerGap className="spinner" size={17} /> Processing package</> : <>Submit for review <ArrowRight size={16} /></>}
+            <button className="button button-primary submit-intake" type="submit" disabled={busy || publicWritesLocked}>
+              {busy ? <><SpinnerGap className="spinner" size={17} /> Processing package</> : publicWritesLocked ? <>Reviewer access required <ShieldCheck size={16} /></> : <>Submit for review <ArrowRight size={16} /></>}
             </button>
             <p className="submission-footnote">
               Submission is recorded in the append-only audit ledger. No applicant message is sent.

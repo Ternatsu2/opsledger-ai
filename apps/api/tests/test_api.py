@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 import opsledger.agent as agent_module
 from opsledger.database import get_db
-from opsledger.main import app
+from opsledger.main import app, settings
 from opsledger.models import AgentRun, Case
 from opsledger.seed import seed_demo_data
 
@@ -142,3 +142,45 @@ def test_invalid_review_operation_returns_a_safe_error(context: TestContext) -> 
     assert response.json()["code"] == "OPERATION_INVALID"
     assert response.json()["message"] == "The requested operation is not valid for this case."
     assert response.json()["correlation_id"]
+
+
+def test_reviewer_token_guards_every_mutating_endpoint(
+    context: TestContext,
+    monkeypatch,
+) -> None:
+    seed_demo_data(context.db, context.settings)
+    case = context.db.scalar(select(Case).where(Case.reference == "OPS-2026-0001"))
+    assert case is not None
+
+    monkeypatch.setattr(settings, "reviewer_token", "private-reviewer-token")
+
+    def override_db() -> Generator:
+        yield context.db
+
+    app.dependency_overrides[get_db] = override_db
+    guarded_requests = [
+        ("POST", "/api/v1/cases"),
+        ("PATCH", f"/api/v1/cases/{case.id}"),
+        ("POST", f"/api/v1/cases/{case.id}/documents"),
+        ("POST", f"/api/v1/cases/{case.id}/process"),
+        ("POST", f"/api/v1/cases/{case.id}/agent-review"),
+        ("POST", f"/api/v1/cases/{case.id}/review-actions"),
+    ]
+    try:
+        with TestClient(app) as client:
+            system = client.get("/api/v1/system")
+            denied = [client.request(method, path) for method, path in guarded_requests]
+            allowed = client.patch(
+                f"/api/v1/cases/{case.id}",
+                headers={"X-Reviewer-Token": "private-reviewer-token"},
+                json={"assigned_reviewer_id": "Authorized reviewer"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert system.status_code == 200
+    assert system.json()["public_writes_locked"] is True
+    assert all(response.status_code == 401 for response in denied)
+    assert all(response.json()["code"] == "REVIEWER_AUTH_REQUIRED" for response in denied)
+    assert allowed.status_code == 200
+    assert allowed.json()["assigned_reviewer_id"] == "Authorized reviewer"

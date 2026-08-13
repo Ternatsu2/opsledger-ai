@@ -4,6 +4,9 @@
 **Builder:** Terry Benjamin Jr. · Antigua and Barbuda<br>
 **Status:** Working synthetic-data MVP; final portal submission requires Terry’s review
 
+**Live demo:** [opsledger-web-production.up.railway.app](https://opsledger-web-production.up.railway.app)<br>
+**Repository:** [github.com/Ternatsu2/opsledger-ai](https://github.com/Ternatsu2/opsledger-ai)
+
 ## Problem
 
 Small businesses and the organizations that support them often manage financing applications across email, PDFs, spreadsheets, shared folders, and repeated follow-up. A reviewer has to locate evidence, retype fields, check whether documents are current, reconcile inconsistent names and totals, spot repeat records, and explain what remains missing. For a lean Caribbean team, that administrative work consumes time that should go to advising businesses and evaluating the cases that are actually ready.
@@ -26,6 +29,8 @@ The repository includes three reproducible synthetic businesses:
 
 Reviewers can inspect extracted values and source locators, deterministic findings, the agent’s evidence citations and limitations, every state transition, human rationale, correlation IDs, and a downloadable PDF review packet.
 
+The signed-out showcase is intentionally read-only. Every mutating API route requires a server-side reviewer token, while the interface keeps the intake, rerun, editing, and approval boundaries visible. This protects the seeded demonstration without pretending that a shared token is the named-user identity system required for a pilot.
+
 ## Caribbean and global relevance
 
 Many Caribbean institutions operate with small teams and mixed digital systems. Replacing a core platform is expensive and slow; improving one document-heavy workflow is a practical entry point. OpsLedger can sit beside the current process, apply a buyer-configured document policy, and show exactly why a case moved or stopped.
@@ -38,7 +43,7 @@ The interface is built with Next.js and TypeScript. FastAPI, Pydantic, SQLAlchem
 
 Local demonstrations can call `gpt-5.6-luna` at `xhigh` through an authenticated Codex installation, inside an ephemeral read-only directory. The hosted demonstration uses a transparent deterministic provider because the local Codex session is not available in Railway. Every run stores provider identity; no fallback is presented as model output.
 
-The current measured build passes 31 backend tests, three frontend unit tests, six Chrome/Chromium browser flows, 20 live-system assertions, and the optimized production build. The seeded set detects all four intentionally introduced deterministic issues. These are synthetic fixture results, not a claim of real-document accuracy.
+The current measured build passes 33 backend tests, three frontend unit tests, six Chrome/Chromium browser flows, 20 live-system assertions, and the optimized production build. Railway built both application containers and serves the public interface and API against managed PostgreSQL. The seeded set detects all four intentionally introduced deterministic issues. These are synthetic fixture results, not a claim of real-document accuracy.
 
 ## Business model and go-to-market
 

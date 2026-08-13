@@ -8,7 +8,7 @@ Local verification on 2026-08-13 AST completed with:
 | --- | --- | --- |
 | TypeScript and Python static checks | pass | TypeScript compile and Ruff rules |
 | Frontend unit tests | 3 passed | stage/amount/date presentation helpers |
-| Backend tests | 31 passed | parsers, storage, rules, state, API, agent contract, audit, retries, export |
+| Backend tests | 33 passed | parsers, storage, rules, state, API, agent contract, audit, retries, export, packaged runtime, write authorization |
 | Playwright | 6 passed | three case outcomes, approval guard, unsent draft, intake validation, mobile overflow |
 | Live API verification | 20 assertions passed | health/readiness, seeded contracts, PDF, audit and safety flags |
 | Next.js production build | pass | optimized production compilation and route generation |
@@ -84,9 +84,15 @@ Playwright runs desktop tests in installed Chrome and a mobile test with the Pix
 
 A separate manual pass inspected dashboard, list, intake, all three workspaces, evidence tabs, the approval dialog, trust/audit, and mobile layouts. The app console contained no product errors.
 
+## Deployed release evidence
+
+Railway built and started both Dockerfiles against managed PostgreSQL. The API applied Alembic migrations, idempotently seeded the exact three cases, mounted its private synthetic-evidence volume, and passed `/health` and `/ready`. The web served its standalone Next.js build with CSP, HSTS, frame denial, MIME sniffing protection, referrer policy, and permissions policy headers.
+
+Against the public URLs, the same live verifier passed all 20 assertions. CORS accepted the exact web origin, all read-only evidence and audit routes remained available, and every mutating route returned `401 REVIEWER_AUTH_REQUIRED` without the server-side reviewer token. A signed-out Chrome pass confirmed the visible read-only disclosure and disabled final write controls.
+
 ## Remaining validation work
 
-- Docker could not be executed because the build machine did not have Docker installed.
+- The local `docker compose` profile was not executed because the build machine did not have Docker installed; Railway supplied executable image builds and health checks for both application containers.
 - No external finance/operations professional feedback has been collected; no testimonial is claimed.
 - No malware scanner, penetration test, load test, screen-reader study, or real-document benchmark has been run.
-- Signed-out production verification must be repeated after deployment URLs exist.
+- Independent external review and assistive-technology validation remain future work.

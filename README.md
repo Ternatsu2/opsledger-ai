@@ -4,6 +4,11 @@ OpsLedger AI turns a small-business financing package into a structured, evidenc
 
 This repository is the working MVP for the Future Caribbean track **Finance, Payments & MSME Capital**. It is a financing-readiness workflow—not a lender, credit model, eligibility engine, or message sender.
 
+**Live demo:** [opsledger-web-production.up.railway.app](https://opsledger-web-production.up.railway.app)<br>
+**Public repository:** [github.com/Ternatsu2/opsledger-ai](https://github.com/Ternatsu2/opsledger-ai)
+
+The public showcase is synthetic-data-only and read-only. Reviewers can inspect every case, evidence citation, deterministic finding, model boundary, PDF packet, and audit event. Mutating actions require a server-side reviewer token that is never shipped to the browser.
+
 ## What the demo proves
 
 | Case | Deliberate fixture condition | Deterministic route | Human-facing result |
@@ -79,7 +84,7 @@ With `MODEL_STRICT=false`, an unavailable or invalid local model run produces a 
 POSTGRES_PASSWORD=choose-a-local-password docker compose up --build
 ```
 
-Docker was not installed on the build machine used for the recorded local evidence. The Docker definitions are therefore covered by static review and the application-level production build, not a local container smoke test. See [deployment notes](docs/DEPLOYMENT.md).
+Docker was not installed on the local build machine, so `docker compose` was not run there. Both application Dockerfiles were built and health-checked by Railway: the web and API containers are serving the live deployment against managed PostgreSQL, and the API uses a persistent private volume for synthetic evidence. See [deployment notes](docs/DEPLOYMENT.md).
 
 ## Verify the build
 
@@ -119,6 +124,7 @@ npm run fixtures
 - [Deployment and rollback](docs/DEPLOYMENT.md)
 - [Demo script](docs/DEMO_SCRIPT.md)
 - [Submission overview](docs/SUBMISSION_OVERVIEW.md)
+- [Final submission package](docs/FINAL_SUBMISSION_PACKAGE.md)
 - [Models, tools, and data disclosure](docs/MODELS_TOOLS_DATA.md)
 
 ## License

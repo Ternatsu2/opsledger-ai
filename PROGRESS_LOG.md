@@ -17,6 +17,11 @@
 - Completed the submission overview, architecture, agent design, models/tools/data disclosure, 417-word Responsible AI statement, security notes, measured testing evidence, deployment runbook, and timed demo script.
 - Completed desktop/mobile visual QA and issue/stage filtering in the case register.
 - Refreshed the clean local demo through strict Luna runs for all three cases. Each used five evidence tools and preserved deterministic routing.
+- Published the public GitHub repository and added a GitHub Actions release gate.
+- Deployed Next.js, FastAPI, managed PostgreSQL, and persistent synthetic-evidence storage to Railway.
+- Fixed and proved the production container paths, non-root web runtime, packaged API layout, mounted-volume ownership, migrations, seeding, and health checks.
+- Ran the 20-assertion live contract suite against Railway and completed a signed-out desktop/mobile browser pass across the dashboard, filters, all three cases, evidence, audit, PDF export, intake validation, trust disclosure, and approval boundary.
+- Protected every public mutating route with constant-time reviewer-token authorization and made the signed-out interface clearly read-only without hiding the workflow controls.
 
 ### Verified
 
@@ -26,10 +31,13 @@
 - Railway account email: `ttbenjamin12345@gmail.com`
 - Public planning deadline: August 17, 2026 at midnight AST
 - Track name: Finance, Payments & MSME Capital
-- Tests: 31 backend, 3 frontend unit, 6 Playwright, and 20 live API assertions passing
+- Tests: 33 backend, 3 frontend unit, 6 Playwright, and 20 live API assertions passing
 - Next.js optimized production build: passing
 - npm audit: zero known vulnerabilities
 - Responsible AI statement: 417 words
+- Public web: `https://opsledger-web-production.up.railway.app`
+- Public API: `https://opsledger-api-production.up.railway.app`
+- GitHub Actions: passing on the deployed release
 
 ### Failed or blocked
 
@@ -44,15 +52,17 @@
 - Run local agent reviews through Codex CLI with `gpt-5.6-luna` and `xhigh` reasoning. Keep a deterministic fallback for offline and hosted demo states.
 - Keep validation, workflow transitions, and consequential actions outside the model.
 
-### Deployment or commit references
+### Deployment and release references
 
 - GitHub repository: `https://github.com/Ternatsu2/opsledger-ai`
-- Initial verified commit and Railway references will be added after publication/deployment.
+- Railway project: `opsledger-ai`
+- Services: `opsledger-web`, `opsledger-api`, and managed `Postgres`
+- Deployed application release before final package hardening: `bf21a33`
+- Submission candidate tag: `submission-candidate-2026-08-13`
 
 ### Next actions
 
-- Publish the personal public GitHub repository from the verified local scope.
-- Deploy web, API, and PostgreSQL to Terry’s personal Railway workspace.
-- Run the live API contract and signed-out browser suite against the deployed URLs.
-- Record/upload the three- to five-minute demo, then ask Terry to review the exact package.
+- Ask Terry to review the exact live link, repository, written package, and optional recording path.
+- Complete TapIn sign-in and terms only under Terry’s control.
 - Do not submit through the final portal until Terry explicitly approves it.
+- Capture the final portal URL and receipt after approved submission.

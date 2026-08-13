@@ -9,6 +9,10 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { apiFetch } from "@/lib/api";
+import type { SystemStatus } from "@/lib/types";
 
 const navigation = [
   { href: "/", label: "Overview", icon: SquaresFour, exact: true },
@@ -35,6 +39,19 @@ function Brand() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [publicWritesLocked, setPublicWritesLocked] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void apiFetch<SystemStatus>("/system")
+      .then((status) => {
+        if (mounted) setPublicWritesLocked(status.public_writes_locked);
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="app-frame">
@@ -70,8 +87,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="rail-trust">
             <ShieldCheck size={18} weight="duotone" />
             <div>
-              <strong>Human controlled</strong>
-              <span>Synthetic data environment</span>
+              <strong>{publicWritesLocked ? "Read-only showcase" : "Human controlled"}</strong>
+              <span>{publicWritesLocked ? "Reviewer writes require authorization" : "Synthetic data environment"}</span>
             </div>
           </div>
           <div className="operator">
@@ -86,14 +103,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="mobile-head">
         <Brand />
-        <div className="mobile-mode"><i /> Demo</div>
+        <div className="mobile-mode"><i /> {publicWritesLocked ? "Read-only" : "Demo"}</div>
       </div>
 
       <main className="main-canvas">
         <div className="page-container">{children}</div>
         <footer className="app-footer">
           <ClipboardText size={15} />
-          Synthetic evidence only · No credit decisions · Human approval required
+          {publicWritesLocked ? "Public showcase · Read-only · " : ""}Synthetic evidence only · No credit decisions · Human approval required
         </footer>
       </main>
 

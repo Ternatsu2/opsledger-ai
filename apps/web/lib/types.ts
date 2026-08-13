@@ -172,6 +172,7 @@ export interface DashboardSummary {
 export interface SystemStatus {
   demo_mode: boolean;
   synthetic_data_only: boolean;
+  public_writes_locked: boolean;
   policy_version: string;
   model_provider: string;
   model: string;

@@ -6,14 +6,21 @@ The default local profile uses SQLite and private filesystem storage. `docker-co
 
 The API startup command applies Alembic migrations, seeds the three cases once, and starts Uvicorn. The Next.js image uses the framework’s standalone server output and runs as a non-root user. The API image also runs as a non-root user.
 
-## Railway target
+## Railway deployment
 
-The intended Railway project contains:
+The live `opsledger-ai` project contains:
 
 - `opsledger-web` built from `apps/web/Dockerfile`;
 - `opsledger-api` built from `apps/api/Dockerfile`;
 - managed PostgreSQL;
 - a private persistent volume mounted at `/data` for the buildathon demonstration.
+
+Public endpoints:
+
+- Web: [opsledger-web-production.up.railway.app](https://opsledger-web-production.up.railway.app)
+- API: [opsledger-api-production.up.railway.app](https://opsledger-api-production.up.railway.app)
+
+Both application services receive Railway’s injected `PORT=8080`. The Docker entrypoints honor that port, and health checks pass before a deployment becomes active. The API volume is initialized by a short root entrypoint, then migrations, seeding, and Uvicorn run as UID 10001 through `gosu`. The web standalone server runs as its non-root application user.
 
 Recommended API variables:
 
@@ -33,7 +40,7 @@ MAX_TABLE_ROWS
 LOG_LEVEL
 ```
 
-The web build requires `NEXT_PUBLIC_API_URL`. Do not expose `REVIEWER_TOKEN`, database credentials, object-storage credentials, or a model key through a `NEXT_PUBLIC_` variable.
+The web build requires `NEXT_PUBLIC_API_URL`. The API has `REVIEWER_TOKEN` configured so all signed-out writes return `401 REVIEWER_AUTH_REQUIRED`; the interface reads `/api/v1/system` and exposes that read-only mode before a user reaches a write boundary. Do not expose the reviewer token, database credentials, object-storage credentials, or a model key through a `NEXT_PUBLIC_` variable.
 
 For the public buildathon service, set `MODEL_PROVIDER=deterministic`: Railway does not have Terry’s authenticated local Codex session. Local demonstrations can use Luna and will record the provider identity on that run. Do not describe the hosted deterministic output as a remote model call.
 
@@ -58,14 +65,14 @@ Railway health checks should target:
 - API database readiness: `/ready`
 - web readiness: `/`
 
-After each deployment:
+After each deployment, substitute the live URLs above:
 
 ```bash
 OPSLEDGER_API_URL=https://<api-domain> npm run verify
 PLAYWRIGHT_BASE_URL=https://<web-domain> npm run test:e2e
 ```
 
-Then open the web URL in a signed-out browser and test every public route, one PDF download, the Case A confirmation dialog without submitting it, and Case B’s lack of a send control.
+The release candidate passed the 20-assertion API script and a signed-out desktop/mobile browser pass. The browser check covered every public route, filters, one PDF download, all evidence types, the Case A confirmation dialog without submitting it, Case B’s editable unsent draft, Case C’s conflicts, audit events, and mobile overflow. It also confirmed that public mutation controls are disabled or stop at the reviewer-authorization boundary.
 
 ## Rollback
 

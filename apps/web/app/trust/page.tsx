@@ -125,6 +125,7 @@ export default function TrustPage() {
           <div><dt>Configured provider</dt><dd>{system.model_provider}</dd></div>
           <div><dt>Local model</dt><dd>{system.model}</dd></div>
           <div><dt>Data mode</dt><dd>{system.synthetic_data_only ? "Synthetic only" : "Restricted"}</dd></div>
+          <div><dt>Public writes</dt><dd>{system.public_writes_locked ? "Reviewer authorization required" : "Enabled"}</dd></div>
           <div><dt>Automatic sending</dt><dd>{system.follow_up_auto_send ? "Enabled" : "Disabled"}</dd></div>
         </dl>
         <div className="runtime-warning">

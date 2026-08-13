@@ -15,7 +15,7 @@ Do not open a public issue containing exploit details, credentials, uploaded evi
 - Sanitized filenames, SHA-256 duplicate checks, opaque storage keys
 - Private API-mediated downloads and optional S3 server-side encryption
 - Explicit state-transition allowlist and required human rationale
-- Optional constant-time reviewer token check
+- Constant-time reviewer token checks on every mutating route when public write protection is enabled
 - Idempotency keys for processing and agent review
 - Restricted CORS, security headers, production CSP, and request rate limits
 - Correlation IDs without raw document logging
@@ -25,7 +25,7 @@ Do not open a public issue containing exploit details, credentials, uploaded evi
 
 ## Demonstration limitations
 
-The public demo does not provide tenant authentication, per-case authorization, malware scanning, antivirus quarantine, encrypted local volumes, automated retention/deletion, a SIEM, formal penetration testing, or compliance certification. The in-memory rate limiter is per API process and should be replaced with a shared limiter before horizontal scaling. A reviewer token can protect write actions, but the buildathon’s signed-out judge flow may intentionally leave it unset.
+The public demo does not provide tenant authentication, per-case authorization, malware scanning, antivirus quarantine, encrypted local volumes, automated retention/deletion, a SIEM, formal penetration testing, or compliance certification. The in-memory rate limiter is per API process and should be replaced with a shared limiter before horizontal scaling. The signed-out Railway showcase is read-only; its reviewer token stays server-side and is not a substitute for pilot-grade identity and access management.
 
 ## Secret handling
 

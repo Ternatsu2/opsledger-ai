@@ -321,6 +321,7 @@ def system_status() -> dict[str, Any]:
     return {
         "demo_mode": settings.demo_mode,
         "synthetic_data_only": True,
+        "public_writes_locked": bool(settings.reviewer_token),
         "policy_version": DEMO_POLICY["version"],
         "model_provider": settings.model_provider,
         "model": settings.codex_model,
@@ -393,6 +394,7 @@ def list_cases(
     response_model=CaseRead,
     status_code=status.HTTP_201_CREATED,
     tags=["cases"],
+    dependencies=[Depends(_require_reviewer_token)],
 )
 def create_case_endpoint(
     payload: CaseCreate,
@@ -410,7 +412,12 @@ def read_case(case_id: str, db: Annotated[Session, Depends(get_db)]) -> Case:
     return _detail_or_404(db, case_id)
 
 
-@app.patch("/api/v1/cases/{case_id}", response_model=CaseRead, tags=["cases"])
+@app.patch(
+    "/api/v1/cases/{case_id}",
+    response_model=CaseRead,
+    tags=["cases"],
+    dependencies=[Depends(_require_reviewer_token)],
+)
 def update_case(
     case_id: str,
     payload: CaseUpdate,
@@ -441,6 +448,7 @@ def update_case(
     response_model=DocumentRead,
     status_code=status.HTTP_201_CREATED,
     tags=["documents"],
+    dependencies=[Depends(_require_reviewer_token)],
 )
 async def upload_document(
     case_id: str,
@@ -490,7 +498,12 @@ def download_document(
     )
 
 
-@app.post("/api/v1/cases/{case_id}/process", response_model=CommandResult, tags=["workflow"])
+@app.post(
+    "/api/v1/cases/{case_id}/process",
+    response_model=CommandResult,
+    tags=["workflow"],
+    dependencies=[Depends(_require_reviewer_token)],
+)
 def process_case_endpoint(
     case_id: str,
     request: Request,
@@ -527,6 +540,7 @@ def process_case_endpoint(
     "/api/v1/cases/{case_id}/agent-review",
     response_model=CommandResult,
     tags=["workflow"],
+    dependencies=[Depends(_require_reviewer_token)],
 )
 def run_agent_endpoint(
     case_id: str,

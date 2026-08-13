@@ -31,7 +31,7 @@ import { StageBadge } from "@/components/stage-badge";
 import { ErrorState, PageLoading } from "@/components/states";
 import { ApiRequestError, apiFetch, assetUrl, idempotencyHeaders } from "@/lib/api";
 import { dateTime, money, sentenceCase, shortHash } from "@/lib/format";
-import type { AgentRun, CaseDetail, Finding } from "@/lib/types";
+import type { AgentRun, CaseDetail, Finding, SystemStatus } from "@/lib/types";
 
 type WorkspaceTab = "review" | "evidence" | "audit";
 
@@ -82,12 +82,17 @@ export default function CaseWorkspacePage() {
   const [message, setMessage] = useState<string | null>(null);
   const [decision, setDecision] = useState<DecisionConfig | null>(null);
   const [draft, setDraft] = useState("");
+  const [publicWritesLocked, setPublicWritesLocked] = useState(false);
 
   const load = async () => {
     setError(null);
     try {
-      const detail = await apiFetch<CaseDetail>(`/cases/${id}`);
+      const [detail, system] = await Promise.all([
+        apiFetch<CaseDetail>(`/cases/${id}`),
+        apiFetch<SystemStatus>("/system"),
+      ]);
       setCaseRecord(detail);
+      setPublicWritesLocked(system.public_writes_locked);
       setDraft(latestRun(detail.agent_runs)?.structured_output_json?.follow_up_draft ?? "");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The case workspace could not load.");
@@ -255,6 +260,12 @@ export default function CaseWorkspacePage() {
           </div>
         ) : null}
 
+        {publicWritesLocked ? (
+          <div className="workspace-message showcase-lock" role="status">
+            <ShieldCheck size={16} /> Public showcase is read-only. You can inspect the evidence, agent output, audit trail, and approval boundary; recording changes requires reviewer authorization.
+          </div>
+        ) : null}
+
         {message ? (
           <div className="workspace-message" role="status">
             <Info size={16} /> {message}
@@ -272,18 +283,18 @@ export default function CaseWorkspacePage() {
         <div className="workspace-actions">
           <div>
             {!caseRecord.assigned_reviewer_id ? (
-              <button type="button" className="button button-secondary" onClick={assignToMe} disabled={Boolean(busy)}>
+              <button type="button" className="button button-secondary" onClick={assignToMe} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
                 <UserCircle size={17} /> {busy === "assign" ? "Assigning" : "Assign to me"}
               </button>
             ) : null}
             {canProcess ? (
-              <button type="button" className="button button-secondary" onClick={() => runCommand("process")} disabled={Boolean(busy)}>
+              <button type="button" className="button button-secondary" onClick={() => runCommand("process")} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
                 {busy === "process" ? <SpinnerGap className="spinner" size={16} /> : <Play size={16} />}
                 Re-run deterministic checks
               </button>
             ) : null}
             {canRunAgent ? (
-              <button type="button" className="button button-dark" onClick={() => runCommand("agent-review")} disabled={Boolean(busy)}>
+              <button type="button" className="button button-dark" onClick={() => runCommand("agent-review")} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
                 {busy === "agent-review" ? <SpinnerGap className="spinner" size={16} /> : <Robot size={16} />}
                 Re-run bounded review
               </button>
@@ -399,7 +410,7 @@ export default function CaseWorkspacePage() {
                   <p>The agent prepared this draft from missing-information findings. OpsLedger cannot send it.</p>
                   <textarea className="textarea" value={draft} onChange={(event) => setDraft(event.target.value)} />
                   <div className="draft-boundary"><Warning size={14} /> Sending is disabled by design.</div>
-                  <button type="button" className="button button-primary" onClick={saveDraft} disabled={Boolean(busy)}>
+                  <button type="button" className="button button-primary" onClick={saveDraft} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
                     {busy === "draft" ? <SpinnerGap className="spinner" size={15} /> : <NotePencil size={15} />}
                     Save reviewer edit
                   </button>
@@ -512,6 +523,7 @@ export default function CaseWorkspacePage() {
         confirmLabel={decision?.confirmLabel ?? "Record action"}
         tone={decision?.tone}
         busy={busy === "decision"}
+        locked={publicWritesLocked}
         onClose={() => setDecision(null)}
         onConfirm={submitDecision}
       />

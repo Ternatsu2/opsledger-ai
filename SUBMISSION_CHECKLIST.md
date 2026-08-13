@@ -9,7 +9,7 @@
 
 ## Product
 
-- [ ] Public deployment opens without private setup.
+- [x] Public deployment opens without private setup.
 - [x] Case A reaches Ready for Human Review and supports a human approval.
 - [x] Case B reaches Needs Information and produces an editable draft.
 - [x] Case C reaches Manual Investigation and shows duplicate evidence.
@@ -22,6 +22,7 @@
 ## Code and security
 
 - [x] Personal public GitHub repository created: `Ternatsu2/opsledger-ai`.
+- [x] Public write routes require server-side reviewer authorization.
 - [x] Apache-2.0 license present.
 - [x] README setup and verification commands documented.
 - [x] `.env.example` contains variable names and safe examples only.
@@ -40,10 +41,11 @@
 
 ## Demo and final portal
 
-- [ ] Three- to five-minute demo recorded.
+- [x] Signed-out live demo published as the required video-or-live-link artifact.
+- [ ] Optional three- to five-minute walkthrough recorded.
 - [x] Demo script covers all three cases, human control, and the audit trail.
 - [x] Written claims match measured behavior.
-- [ ] Repository, deployment, and demo links work while signed out.
+- [x] Repository, deployment, and live demo links work while signed out.
 - [ ] Terry reviews the exact package.
 - [ ] Final submission sent only after Terry’s approval.
 - [ ] Submission receipt captured.

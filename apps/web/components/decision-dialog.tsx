@@ -10,6 +10,7 @@ export function DecisionDialog({
   confirmLabel,
   tone = "primary",
   busy = false,
+  locked = false,
   onClose,
   onConfirm,
 }: {
@@ -19,6 +20,7 @@ export function DecisionDialog({
   confirmLabel: string;
   tone?: "primary" | "danger";
   busy?: boolean;
+  locked?: boolean;
   onClose: () => void;
   onConfirm: (rationale: string) => void;
 }) {
@@ -81,8 +83,9 @@ export function DecisionDialog({
         {error ? <span className="field-error">{error}</span> : null}
       </label>
       <div className="dialog-boundary">
-        This records a workflow action in the audit ledger. It does not make a lending
-        or eligibility decision.
+        {locked
+          ? "This public showcase is read-only. An authorized reviewer can record the action in a controlled environment."
+          : "This records a workflow action in the audit ledger. It does not make a lending or eligibility decision."}
       </div>
       <div className="dialog-actions">
         <button type="button" className="button button-secondary" onClick={onClose} disabled={busy}>Cancel</button>
@@ -90,9 +93,9 @@ export function DecisionDialog({
           type="button"
           className={`button ${tone === "danger" ? "button-danger" : "button-primary"}`}
           onClick={submit}
-          disabled={busy}
+          disabled={busy || locked}
         >
-          {confirmLabel}
+          {locked ? "Reviewer access required" : confirmLabel}
         </button>
       </div>
     </dialog>

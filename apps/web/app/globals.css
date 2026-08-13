@@ -2222,6 +2222,12 @@ button:disabled {
   font-size: 18px;
 }
 
+.workspace-message.showcase-lock {
+  border-color: #bfd6ce;
+  background: var(--teal-pale);
+  color: var(--teal-deep);
+}
+
 .case-facts {
   display: grid;
   grid-template-columns: 1.25fr 0.85fr 0.72fr 0.85fr;

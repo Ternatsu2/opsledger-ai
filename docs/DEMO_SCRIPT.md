@@ -6,7 +6,7 @@ Target length: 3 minutes 45 seconds. Record with only the deployed app, architec
 
 “I’m Terry Benjamin Jr., a software engineer from Antigua and Barbuda. I build backend systems, workflow automation, and applied AI for document-heavy finance and operations work. OpsLedger AI helps small-business financing teams turn scattered applications and supporting files into reviewed, traceable next actions.”
 
-Show the dashboard. Pause long enough for the three queue outcomes to be readable.
+Open [the live signed-out demo](https://opsledger-web-production.up.railway.app). Show the dashboard and pause long enough for the three queue outcomes to be readable. Point out that the public showcase is read-only; the full workflow runs locally with authorized reviewer access.
 
 ## 0:25–0:55 · System boundary
 
@@ -25,7 +25,7 @@ Open `OPS-2026-0001`.
 - Show the agent summary, cited facts, provider identity, and limitations.
 - Click **Approve next stage** to show the confirmation dialog.
 - Explain that a rationale is required and the action is not a lending decision.
-- Record approval only in the video take prepared for final demo state; then show the audit event and PDF packet.
+- In the public link, show that the final control requires reviewer authorization and cancel the dialog. For an authorized local recording only, record approval, show the resulting audit event and PDF packet, then reset the synthetic fixture.
 
 ## 1:40–2:25 · Case B
 
@@ -33,7 +33,7 @@ Open `OPS-2026-0002`.
 
 - Point to `REQUIRED_DOCUMENT_MISSING` and `FINANCIAL_EVIDENCE_STALE`.
 - Show the 286-day calculation and 180-day demonstration policy.
-- Edit one sentence in the prepared draft and save the reviewer edit.
+- Edit one sentence in the prepared draft to show the human-in-the-loop control. In the public link, explain that saving is locked; in an authorized local take, save the edit.
 - Say: “OpsLedger has no send control. This remains a draft until a person uses an approved external channel.”
 - Open the audit timeline to show the edit without a message event.
 
@@ -50,7 +50,7 @@ Open `OPS-2026-0003`.
 
 Show `docs/TESTING.md` or a clean terminal run.
 
-“The build currently passes 31 backend tests, three frontend unit tests, six real-browser flows, 20 live API checks, and an optimized production build. The first buyer hypothesis is a credit union, MSME support program, or advisory team with a document-heavy intake. A pilot would run beside the existing process and measure turnaround time, missing-document cycles, and reviewer overrides.”
+“The build currently passes 33 backend tests, three frontend unit tests, six real-browser flows, 20 live API checks, and an optimized production build. Railway built both application containers and serves the signed-out system against PostgreSQL. The first buyer hypothesis is a credit union, MSME support program, or advisory team with a document-heavy intake. A pilot would run beside the existing process and measure turnaround time, missing-document cycles, and reviewer overrides.”
 
 ## 3:30–3:45 · Close
 
@@ -64,3 +64,4 @@ Show `docs/TESTING.md` or a clean terminal run.
 - Do not show Railway/GitHub tokens, Gmail, the builder login, former client names, or private folders.
 - Upload the final video only after Terry reviews the take.
 - Test the final video URL while signed out.
+- If no video is recorded, submit the verified live demo link under the published “video or live demo link” option.
