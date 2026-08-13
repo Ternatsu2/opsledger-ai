@@ -11,12 +11,14 @@ COPY apps/api/pyproject.toml apps/api/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY apps/api/ ./
-RUN uv sync --frozen --no-dev && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gosu && \
+    rm -rf /var/lib/apt/lists/* && \
+    uv sync --frozen --no-dev && \
     useradd --create-home --uid 10001 opsledger && \
     mkdir -p /data && \
     chown -R opsledger:opsledger /app /data
 
-USER opsledger
 EXPOSE 8000
 
 ENTRYPOINT ["./entrypoint.sh"]
