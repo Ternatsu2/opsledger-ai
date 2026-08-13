@@ -4,8 +4,15 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
+def _project_root(api_root: Path) -> Path:
+    if api_root.name == "api" and api_root.parent.name == "apps":
+        return api_root.parents[1]
+    return api_root
+
+
 API_ROOT = Path(__file__).resolve().parents[1]
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = _project_root(API_ROOT)
 
 
 class Settings(BaseSettings):
