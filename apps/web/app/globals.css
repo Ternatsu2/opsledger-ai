@@ -891,7 +891,9 @@ button:disabled {
 .activity-case small { overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 450; text-overflow: ellipsis; white-space: nowrap; }
 .audit-actor-label { font-size: 12px; }
 .audit-row > time { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.ledger-foot { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 10px; color: var(--muted); font-size: 11px; }
+.ledger-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+.ledger-foot button { border: 0; background: transparent; color: var(--teal); padding: 4px 0; font-weight: 620; }
+.ledger-foot > span { display: flex; align-items: center; gap: 5px; margin-left: auto; }
 
 .demo-details {
   margin-top: 54px;
@@ -984,6 +986,8 @@ button:disabled {
   .audit-filter { width: fit-content; }
   .audit-row { grid-template-columns: 32px minmax(0, 1fr); }
   .audit-row > time { grid-column: 2; }
+  .ledger-foot { align-items: flex-start; flex-direction: column; }
+  .ledger-foot > span { margin-left: 0; }
 }
 
 /* Dashboard */

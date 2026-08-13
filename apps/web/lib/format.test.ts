@@ -34,6 +34,14 @@ describe("format helpers", () => {
     expect(eventLabel("AGENT_RECOMMENDATION_SAVED", "technical summary")).toBe(
       "Review summary prepared",
     );
+    expect(eventLabel(
+      "DOCUMENT_STORED",
+      "Stored ownership declaration for OPS-2026-0002",
+    )).toBe("Added ownership form");
+    expect(eventLabel(
+      "DOCUMENT_EXTRACTED",
+      "Extracted ops-2026-0002-revenue.xlsx",
+    )).toBe("Checked revenue records");
     expect(
       findingText(
         "FINANCIAL_EVIDENCE_STALE",

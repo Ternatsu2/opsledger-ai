@@ -19,6 +19,7 @@ export default function ActivityPage() {
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [actor, setActor] = useState("ALL");
+  const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
@@ -50,6 +51,7 @@ export default function ActivityPage() {
     [actor, events],
   );
   const caseById = useMemo(() => new Map(cases.map((item) => [item.id, item])), [cases]);
+  const displayedEvents = showAll ? visibleEvents : visibleEvents.slice(0, 10);
 
   if (error) return <div className="page-pad"><ErrorState detail={error} onRetry={load} /></div>;
   if (!system || !events) return <PageLoading label="Loading activity" />;
@@ -66,7 +68,10 @@ export default function ActivityPage() {
           <div><h2>Application updates</h2><p>Newest updates appear first.</p></div>
           <label className="audit-filter">
             <span>Updated by</span>
-            <select value={actor} onChange={(event) => setActor(event.target.value)}>
+            <select value={actor} onChange={(event) => {
+              setActor(event.target.value);
+              setShowAll(false);
+            }}>
               <option value="ALL">Everyone</option>
               <option value="OPSLEDGER">OpsLedger</option>
               <option value="user">Reviewer</option>
@@ -76,7 +81,7 @@ export default function ActivityPage() {
 
         <div className="audit-table activity-table panel">
           <div className="audit-head" aria-hidden="true"><span>Update</span><span>Application</span><span>Updated by</span><span>Time</span></div>
-          {visibleEvents.map((event) => {
+          {displayedEvents.map((event) => {
             const relatedCase = event.case_id ? caseById.get(event.case_id) : undefined;
             return (
               <div className="audit-row" key={event.id}>
@@ -91,7 +96,14 @@ export default function ActivityPage() {
             );
           })}
         </div>
-        <div className="ledger-foot"><CheckCircle size={15} /> {visibleEvents.length} updates</div>
+        <div className="ledger-foot">
+          {visibleEvents.length > 10 ? (
+            <button type="button" aria-expanded={showAll} onClick={() => setShowAll((current) => !current)}>
+              {showAll ? "Show fewer" : `Show all ${visibleEvents.length} updates`}
+            </button>
+          ) : null}
+          <span><CheckCircle size={15} /> Showing {displayedEvents.length} of {visibleEvents.length} updates</span>
+        </div>
       </section>
 
       <details className="demo-details">

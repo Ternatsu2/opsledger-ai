@@ -200,10 +200,18 @@ export function eventLabel(eventType: string, summary: string): string {
   if (eventType === "DOCUMENT_STORED") {
     return summary
       .replace(/^Stored /, "Added ")
-      .replace(/ for OPS-\d{4}-\d{4}$/, "");
+      .replace(/ for OPS-\d{4}-\d{4}$/, "")
+      .replace(/ownership declaration/gi, "ownership form")
+      .replace(/revenue statement/gi, "revenue records")
+      .replace(/registration evidence/gi, "business registration");
   }
   if (eventType === "DOCUMENT_EXTRACTED") {
-    return summary.replace(/^Extracted /, "Checked ");
+    return summary
+      .replace(/^Extracted /, "Checked ")
+      .replace(/ops-\d{4}-\d{4}-ownership\.pdf/gi, "ownership form")
+      .replace(/ops-\d{4}-\d{4}-revenue\.xlsx/gi, "revenue records")
+      .replace(/ops-\d{4}-\d{4}-registration\.pdf/gi, "business registration")
+      .replace(/ops-\d{4}-\d{4}-bank\.csv/gi, "bank statement");
   }
   if (eventType === "VALIDATION_COMPLETED") {
     const count = Number(summary.match(/with (\d+) finding/)?.[1] ?? 0);

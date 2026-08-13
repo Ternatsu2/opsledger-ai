@@ -89,6 +89,13 @@ test("activity page keeps system details out of the main workflow", async ({ pag
 
   await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
   await expect(page.getByText("See what changed, who changed it, and when.")).toBeVisible();
+  await expect(page.locator(".audit-row")).toHaveCount(10);
+  const showAll = page.getByRole("button", { name: /Show all \d+ updates/ });
+  const updateCount = Number((await showAll.textContent())?.match(/\d+/)?.[0]);
+  await showAll.click();
+  await expect(page.locator(".audit-row")).toHaveCount(updateCount);
+  await expect(page.getByText("Added ownership form", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Added ownership declaration", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/model provider/i)).not.toBeVisible();
   await expect(page.getByText(/public writes/i)).not.toBeVisible();
 });
