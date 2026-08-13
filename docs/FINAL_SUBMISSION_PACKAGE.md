@@ -28,18 +28,18 @@ The live demo includes one clean package, one stale/incomplete package, and one 
 ## What to inspect in the live demo
 
 1. Open the dashboard and confirm all three operational outcomes are visible.
-2. Open `OPS-2026-0001` to inspect its 100/100 checklist, source-linked evidence, cited review, approval boundary, audit trail, and PDF packet.
+2. Open `OPS-2026-0001` to inspect its four required documents, source-linked details, review summary, approval note, History, and PDF packet.
 3. Open `OPS-2026-0002` to inspect the missing ownership declaration, 286-day-old revenue evidence, and editable follow-up draft with no send control.
-4. Open `OPS-2026-0003` to inspect the legal-name mismatch, registration-number collision, and Manual Investigation hold.
-5. Open Audit & trust to see the runtime provider, deterministic/model boundary, public write lock, human gate, and append-only workspace ledger.
+4. Open `OPS-2026-0003` to inspect the legal-name mismatch, registration-number collision, and **Needs a closer look** status.
+5. Open **Activity** to see what changed, which application it affected, who updated it, and when. Optional demo details sit below the activity list.
 
 The public showcase deliberately blocks writes. Its controls remain visible so judges can inspect the workflow boundary; recording a change requires reviewer authorization in a controlled environment.
 
 ## Verified evidence
 
-- 33 backend tests passing
-- 3 frontend unit tests passing
-- 6 Playwright desktop/mobile flows passing
+- 35 backend tests passing
+- 7 frontend unit tests passing
+- 7 Playwright desktop/mobile flows passing
 - 20 live API assertions passing against Railway
 - Optimized Next.js production build passing
 - GitHub Actions release gate passing

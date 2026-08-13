@@ -14,7 +14,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session, selectinload
 
-from .agent import run_agent_review
+from .agent import FINDING_LABELS, plain_finding, run_agent_review
 from .audit import record_event
 from .config import Settings, get_settings
 from .models import (
@@ -38,6 +38,46 @@ DOCUMENT_TYPES = {
     "BANK_STATEMENT",
     "OWNERSHIP_DECLARATION",
 }
+
+STAGE_LABELS = {
+    "DRAFT": "Draft",
+    "SUBMITTED": "Received",
+    "INGESTING": "Checking documents",
+    "EXTRACTION_FAILED": "File needs attention",
+    "VALIDATING": "Checking details",
+    "NEEDS_INFORMATION": "More information needed",
+    "AGENT_REVIEW": "Preparing review",
+    "READY_FOR_HUMAN_REVIEW": "Ready for review",
+    "MANUAL_INVESTIGATION": "Needs a closer look",
+    "APPROVED_FOR_NEXT_STAGE": "Approved for next step",
+    "CLOSED": "Closed",
+}
+
+
+def _event_label(event: AuditEvent) -> str:
+    if event.event_type == "CASE_CREATED":
+        return "Application created"
+    if event.event_type == "DOCUMENT_STORED":
+        return "Document added"
+    if event.event_type == "DOCUMENT_EXTRACTED":
+        return "Document checked"
+    if event.event_type == "VALIDATION_COMPLETED":
+        return "Application checks completed"
+    if event.event_type == "AGENT_RECOMMENDATION_SAVED":
+        return "Review summary prepared"
+    if event.event_type == "CASE_ASSIGNMENT_CHANGED":
+        return "Reviewer assignment changed"
+    if event.event_type == "REVIEW_ACTION_RECORDED":
+        return "Reviewer saved a decision"
+    if event.event_type == "CASE_STAGE_CHANGED":
+        if "NEEDS_INFORMATION" in event.summary:
+            return "Application needs more information"
+        if "MANUAL_INVESTIGATION" in event.summary:
+            return "Application needs a closer look"
+        if "READY_FOR_HUMAN_REVIEW" in event.summary:
+            return "Application is ready for review"
+        return "Application status updated"
+    return "Application updated"
 
 
 def _next_reference(db: Session) -> str:
@@ -432,23 +472,26 @@ def build_case_packet(case: Case) -> bytes:
     story: list[Any] = [
         Paragraph("OpsLedger AI", styles["PacketTitle"]),
         Paragraph(
-            f"{html.escape(case.reference)} · Synthetic financing-readiness packet",
+            f"{html.escape(case.reference)} · Application review",
             styles["Heading2"],
         ),
         Paragraph(
-            "This packet supports a human workflow review. It does not contain a lending, "
-            "credit, or eligibility decision.",
+            "Use this packet to check the application and choose a next step.",
             styles["BodyText"],
         ),
         Spacer(1, 8 * mm),
     ]
+    required_documents = [
+        item for item in case.completeness_breakdown if item["code"] in DOCUMENT_TYPES
+    ]
+    received_documents = sum(1 for item in required_documents if item["complete"])
     profile_rows = [
         ["Business", case.legal_business_name],
         ["Registration", case.registration_number],
-        ["Jurisdiction", case.jurisdiction],
-        ["Request", f"{case.currency} {case.requested_amount:,.2f}"],
-        ["Stage", case.stage.replace("_", " ").title()],
-        ["Readiness", f"{case.completeness_score}/100"],
+        ["Country or territory", case.jurisdiction],
+        ["Amount requested", f"{case.currency} {case.requested_amount:,.2f}"],
+        ["Status", STAGE_LABELS.get(case.stage, "In review")],
+        ["Documents", f"{received_documents} of {len(required_documents)} received"],
     ]
     profile = Table(profile_rows, colWidths=[42 * mm, 115 * mm])
     profile.setStyle(
@@ -468,45 +511,72 @@ def build_case_packet(case: Case) -> bytes:
     )
     story.extend([profile, Spacer(1, 7 * mm)])
 
-    story.append(Paragraph("Deterministic findings", styles["Heading2"]))
-    if case.findings:
-        for finding in case.findings:
+    open_findings = [finding for finding in case.findings if finding.status == "OPEN"]
+    story.append(Paragraph("Items to check", styles["Heading2"]))
+    if open_findings:
+        for finding in open_findings:
+            finding_data = {
+                "rule_code": finding.rule_code,
+                "message": finding.message,
+            }
+            finding_label = FINDING_LABELS.get(finding.rule_code, "Item to check")
             story.append(
                 Paragraph(
-                    f"<b>{html.escape(finding.rule_code)}</b>: {html.escape(finding.message)}",
+                    f"<b>{html.escape(finding_label)}</b>: "
+                    f"{html.escape(plain_finding(finding_data))}",
                     styles["BodyText"],
                 )
             )
     else:
-        story.append(Paragraph("No open deterministic finding.", styles["BodyText"]))
+        story.append(Paragraph("No open issues were found.", styles["BodyText"]))
 
     latest_run = max(case.agent_runs, key=lambda run: run.started_at, default=None)
-    story.extend([Spacer(1, 6 * mm), Paragraph("Agent recommendation", styles["Heading2"])])
+    story.extend([Spacer(1, 6 * mm), Paragraph("Review summary", styles["Heading2"])])
     if latest_run and latest_run.structured_output_json:
         output = latest_run.structured_output_json
-        story.append(Paragraph(html.escape(output["case_summary"]), styles["BodyText"]))
+        purpose = case.funding_purpose.rstrip(" .")
+        if purpose:
+            purpose = purpose[0].lower() + purpose[1:]
         story.append(
             Paragraph(
-                f"<b>Proposed workflow action:</b> {html.escape(output['recommended_action'])}",
+                f"{html.escape(case.legal_business_name)} is requesting "
+                f"{html.escape(case.currency)} {case.requested_amount:,.2f}. "
+                f"The funds would be used to {html.escape(purpose or 'support the business')}.",
                 styles["BodyText"],
             )
         )
         story.append(
             Paragraph(
-                f"<b>Reason:</b> {html.escape(output['recommendation_reason'])}",
+                f"<b>Suggested next step:</b> "
+                f"{html.escape(STAGE_LABELS.get(output['recommended_action'], 'Review'))}",
+                styles["BodyText"],
+            )
+        )
+        if case.stage == CaseStage.READY_FOR_HUMAN_REVIEW.value:
+            reason = "All required documents are present and no open issues were found."
+        elif case.stage == CaseStage.NEEDS_INFORMATION.value:
+            reason = "One or more documents need to be added or updated."
+        elif case.stage == CaseStage.MANUAL_INVESTIGATION.value:
+            reason = "Some application details do not match and need a closer look."
+        else:
+            reason = "Check the application and choose what should happen next."
+        story.append(
+            Paragraph(
+                f"<b>Why:</b> {html.escape(reason)}",
                 styles["BodyText"],
             )
         )
     else:
-        story.append(Paragraph("No agent recommendation has been saved.", styles["BodyText"]))
+        story.append(Paragraph("The review summary is not ready yet.", styles["BodyText"]))
 
-    story.extend([Spacer(1, 6 * mm), Paragraph("Audit trail", styles["Heading2"])])
-    for event in sorted(case.audit_events, key=lambda item: item.created_at):
+    story.extend([Spacer(1, 6 * mm), Paragraph("Recent history", styles["Heading2"])])
+    recent_events = sorted(case.audit_events, key=lambda item: item.created_at, reverse=True)[:8]
+    for event in recent_events:
         timestamp = event.created_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        actor = "Reviewer" if event.actor_type == "user" else "OpsLedger"
         story.append(
             Paragraph(
-                f"<b>{timestamp}</b> · {html.escape(event.actor_type)} · "
-                f"{html.escape(event.summary)}",
+                f"<b>{timestamp}</b> · {actor} · {html.escape(_event_label(event))}",
                 styles["BodyText"],
             )
         )

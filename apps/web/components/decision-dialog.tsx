@@ -42,7 +42,7 @@ export function DecisionDialog({
 
   const submit = () => {
     if (rationale.trim().length < 5) {
-      setError("Add a short evidence-based rationale before recording this action.");
+      setError("Add a short note before you continue.");
       return;
     }
     onConfirm(rationale.trim());
@@ -69,7 +69,7 @@ export function DecisionDialog({
       <h2>{title}</h2>
       <p>{detail}</p>
       <label className="field dialog-rationale">
-        <span>Reviewer rationale</span>
+        <span>Reason</span>
         <textarea
           className={`textarea ${error ? "input-error" : ""}`}
           value={rationale}
@@ -77,15 +77,15 @@ export function DecisionDialog({
             setRationale(event.target.value);
             setError("");
           }}
-          placeholder="State what you reviewed and why this is the right workflow action."
+          placeholder="What did you check, and why are you taking this step?"
           autoFocus
         />
         {error ? <span className="field-error">{error}</span> : null}
       </label>
       <div className="dialog-boundary">
         {locked
-          ? "This public showcase is read-only. An authorized reviewer can record the action in a controlled environment."
-          : "This records a workflow action in the audit ledger. It does not make a lending or eligibility decision."}
+          ? "Demo mode is view-only. Sign in as a reviewer to save changes."
+          : "OpsLedger saves this note with the application."}
       </div>
       <div className="dialog-actions">
         <button type="button" className="button button-secondary" onClick={onClose} disabled={busy}>Cancel</button>
@@ -95,7 +95,7 @@ export function DecisionDialog({
           onClick={submit}
           disabled={busy || locked}
         >
-          {locked ? "Reviewer access required" : confirmLabel}
+          {locked ? "View only" : confirmLabel}
         </button>
       </div>
     </dialog>

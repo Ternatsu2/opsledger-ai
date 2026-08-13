@@ -22,6 +22,9 @@
 - Fixed and proved the production container paths, non-root web runtime, packaged API layout, mounted-volume ownership, migrations, seeding, and health checks.
 - Ran the 20-assertion live contract suite against Railway and completed a signed-out desktop/mobile browser pass across the dashboard, filters, all three cases, evidence, audit, PDF export, intake validation, trust disclosure, and approval boundary.
 - Protected every public mutating route with constant-time reviewer-token authorization and made the signed-out interface clearly read-only without hiding the workflow controls.
+- Reworked the full reviewer interface around plain application language, larger readable type, progressive disclosure, correct document counts, and single-purpose screens. Internal stages, rule codes, provider details, correlation IDs, confidence values, parser details, and model terminology no longer appear in the primary workflow.
+- Rewrote the saved summary presentation, prepared message, evidence labels, and PDF review packet so older stored runs also display in reviewer-friendly language.
+- Repeated desktop and 390-pixel browser QA across Home, Applications, Add application, all three review outcomes, Documents, History, Activity, approval notes, filtering, and mobile navigation.
 
 ### Verified
 
@@ -31,7 +34,7 @@
 - Railway account email: `ttbenjamin12345@gmail.com`
 - Public planning deadline: August 17, 2026 at midnight AST
 - Track name: Finance, Payments & MSME Capital
-- Tests: 33 backend, 3 frontend unit, 6 Playwright, and 20 live API assertions passing
+- Tests: 35 backend, 7 frontend unit, 7 Playwright, and 20 live API assertions passing
 - Next.js optimized production build: passing
 - npm audit: zero known vulnerabilities
 - Responsible AI statement: 417 words

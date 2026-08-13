@@ -12,14 +12,14 @@ import { useEffect, useMemo, useState } from "react";
 import { StageBadge } from "@/components/stage-badge";
 import { EmptyState, ErrorState, PageLoading } from "@/components/states";
 import { apiFetch } from "@/lib/api";
-import { money, relativeTime, sentenceCase } from "@/lib/format";
+import { documentProgress, issueLabel, money, relativeTime } from "@/lib/format";
 import type { CaseListRecord, CaseStage } from "@/lib/types";
 
 const filters: Array<{ value: "ALL" | CaseStage; label: string }> = [
-  { value: "ALL", label: "All cases" },
+  { value: "ALL", label: "All statuses" },
   { value: "READY_FOR_HUMAN_REVIEW", label: "Ready for review" },
-  { value: "NEEDS_INFORMATION", label: "Needs information" },
-  { value: "MANUAL_INVESTIGATION", label: "Manual investigation" },
+  { value: "NEEDS_INFORMATION", label: "More information needed" },
+  { value: "MANUAL_INVESTIGATION", label: "Needs a closer look" },
   { value: "APPROVED_FOR_NEXT_STAGE", label: "Approved" },
   { value: "DRAFT", label: "Draft" },
 ];
@@ -36,7 +36,7 @@ export default function CasesPage() {
     try {
       setCases(await apiFetch<CaseListRecord[]>("/cases"));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The case queue could not load.");
+      setError(caught instanceof Error ? caught.message : "We couldn't load the applications.");
     }
   };
 
@@ -68,7 +68,7 @@ export default function CasesPage() {
   }
 
   if (!cases) {
-    return <PageLoading label="Loading case queue" />;
+    return <PageLoading label="Loading applications" />;
   }
 
   const ready = cases.filter((item) => item.stage === "READY_FOR_HUMAN_REVIEW").length;
@@ -79,23 +79,18 @@ export default function CasesPage() {
     <div className="page-pad cases-page">
       <header className="page-header-row cases-header">
         <div>
-          <div className="page-kicker">Case operations</div>
-          <h1 className="page-title">Financing-readiness queue</h1>
-          <p className="page-lead">
-            Search the full intake register, see why each case is routed, and open the
-            underlying evidence before taking action.
-          </p>
+          <h1 className="page-title">Applications</h1>
+          <p className="page-lead">Search by business, application number, or registration.</p>
         </div>
         <Link href="/cases/new" className="button button-primary">
-          <FilePlus size={17} /> New intake
+          <FilePlus size={17} /> Add application
         </Link>
       </header>
 
       <div className="queue-stats" aria-label="Queue summary">
-        <div><span>Total register</span><strong>{cases.length}</strong></div>
-        <div><span>Awaiting a person</span><strong>{ready}</strong></div>
-        <div><span>Held for investigation</span><strong>{held}</strong></div>
-        <p>Last synchronized just now · Synthetic demo workspace</p>
+        <div><span>All applications</span><strong>{cases.length}</strong></div>
+        <div><span>Ready to review</span><strong>{ready}</strong></div>
+        <div><span>Need a closer look</span><strong>{held}</strong></div>
       </div>
 
       <section className="register-section">
@@ -106,8 +101,8 @@ export default function CasesPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search business, case, or registration"
-              aria-label="Search cases"
+              placeholder="Search applications"
+              aria-label="Search applications"
             />
           </label>
           <label className="filter-field">
@@ -115,7 +110,7 @@ export default function CasesPage() {
             <select
               value={filter}
               onChange={(event) => setFilter(event.target.value as "ALL" | CaseStage)}
-              aria-label="Filter by workflow stage"
+              aria-label="Filter by status"
             >
               {filters.map((item) => (
                 <option key={item.value} value={item.value}>{item.label}</option>
@@ -127,11 +122,11 @@ export default function CasesPage() {
             <select
               value={issueFilter}
               onChange={(event) => setIssueFilter(event.target.value)}
-              aria-label="Filter by issue type"
+              aria-label="Filter by issue"
             >
-              <option value="ALL">All issue types</option>
+              <option value="ALL">All issues</option>
               {issueFilters.map((issue) => (
-                <option key={issue} value={issue}>{sentenceCase(issue)}</option>
+                <option key={issue} value={issue}>{issueLabel(issue)}</option>
               ))}
             </select>
           </label>
@@ -141,54 +136,52 @@ export default function CasesPage() {
         {visibleCases.length ? (
           <div className="register-table panel">
             <div className="register-head" aria-hidden="true">
-              <span>Case / business</span>
-              <span>Financing request</span>
-              <span>Package</span>
-              <span>Issues</span>
-              <span>Current state</span>
+              <span>Business</span>
+              <span>Amount requested</span>
+              <span>Documents</span>
+              <span>Needs attention</span>
+              <span>Status</span>
               <span>Reviewer</span>
-              <span>Last action</span>
               <span />
             </div>
-            {visibleCases.map((caseRecord) => (
-              <Link
-                key={caseRecord.id}
-                href={`/cases/${caseRecord.id}`}
-                className="register-row"
-              >
-                <span className="register-business">
-                  <i>{caseRecord.legal_business_name.charAt(0)}</i>
-                  <span>
-                    <strong>{caseRecord.legal_business_name}</strong>
-                    <small>{caseRecord.reference} · submitted {relativeTime(caseRecord.created_at)}</small>
+            {visibleCases.map((caseRecord) => {
+              const { received, required } = documentProgress(caseRecord.completeness_breakdown);
+              return (
+                <Link
+                  key={caseRecord.id}
+                  href={`/cases/${caseRecord.id}`}
+                  className="register-row"
+                >
+                  <span className="register-business">
+                    <i>{caseRecord.legal_business_name.charAt(0)}</i>
+                    <span>
+                      <strong>{caseRecord.legal_business_name}</strong>
+                      <small>{caseRecord.reference} · added {relativeTime(caseRecord.created_at)}</small>
+                    </span>
                   </span>
-                </span>
-                <span className="register-request">
-                  <strong>{money(caseRecord.requested_amount, caseRecord.currency)}</strong>
-                  <small>{caseRecord.funding_purpose}</small>
-                </span>
-                <span className="register-score">
-                  <strong>{caseRecord.completeness_score}%</strong>
-                  <span><i style={{ width: `${caseRecord.completeness_score}%` }} /></span>
-                </span>
-                <span className={`register-issues ${caseRecord.open_finding_count ? "has-issues" : ""}`}>
-                  <strong>{caseRecord.open_finding_count}</strong>
-                  <small>{caseRecord.issue_codes.length ? sentenceCase(caseRecord.issue_codes[0]) : "Clear"}</small>
-                </span>
-                <StageBadge stage={caseRecord.stage} />
-                <span className="register-reviewer">{caseRecord.assigned_reviewer_id ?? "Unassigned"}</span>
-                <span className="register-action">
-                  <strong>{caseRecord.last_action ?? "Case created"}</strong>
-                  <small>{relativeTime(caseRecord.updated_at)}</small>
-                </span>
-                <ArrowRight className="row-arrow" size={17} />
-              </Link>
-            ))}
+                  <span className="register-request">
+                    <strong>{money(caseRecord.requested_amount, caseRecord.currency)}</strong>
+                    <small>{caseRecord.funding_purpose}</small>
+                  </span>
+                  <span className="register-documents">
+                    <strong>{received} of {required}</strong>
+                    <small>received</small>
+                  </span>
+                  <span className={`register-issues ${caseRecord.open_finding_count ? "has-issues" : ""}`}>
+                    <strong>{caseRecord.issue_codes.length ? issueLabel(caseRecord.issue_codes[0]) : "No issues"}</strong>
+                    {caseRecord.issue_codes.length > 1 ? <small>+{caseRecord.issue_codes.length - 1} more</small> : null}
+                  </span>
+                  <StageBadge stage={caseRecord.stage} />
+                  <span className="register-reviewer">{caseRecord.assigned_reviewer_id ?? "Unassigned"}</span>
+                  <ArrowRight className="row-arrow" size={17} />
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <EmptyState
-            title="No cases match this view"
-            detail="Clear the search or choose another workflow state."
+            title="No applications found"
+            detail="Try another search or filter."
           />
         )}
       </section>

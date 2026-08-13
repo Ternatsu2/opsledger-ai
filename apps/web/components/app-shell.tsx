@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  ClipboardText,
+  ClockCounterClockwise,
+  Eye,
   FilePlus,
   Folders,
-  ShieldCheck,
   SquaresFour,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -15,11 +15,17 @@ import { apiFetch } from "@/lib/api";
 import type { SystemStatus } from "@/lib/types";
 
 const navigation = [
-  { href: "/", label: "Overview", icon: SquaresFour, exact: true },
-  { href: "/cases", label: "Cases", icon: Folders },
-  { href: "/cases/new", label: "New intake", icon: FilePlus, exact: true },
-  { href: "/trust", label: "Audit & trust", icon: ShieldCheck },
+  { href: "/", label: "Home", icon: SquaresFour, exact: true },
+  { href: "/cases", label: "Applications", icon: Folders },
+  { href: "/cases/new", label: "Add application", icon: FilePlus, exact: true },
+  { href: "/trust", label: "Activity", icon: ClockCounterClockwise },
 ];
+
+function isActivePath(pathname: string, item: (typeof navigation)[number]): boolean {
+  if (item.exact) return pathname === item.href;
+  if (item.href === "/cases" && pathname === "/cases/new") return false;
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
 
 function Brand() {
   return (
@@ -60,13 +66,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Brand />
           <div className="rail-context">
             <span>Workspace</span>
-            <strong>Caribbean MSME review</strong>
+            <strong>MSME applications</strong>
           </div>
           <nav className="rail-nav" aria-label="Primary navigation">
             {navigation.map((item) => {
-              const active = item.exact
-                ? pathname === item.href
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = isActivePath(pathname, item);
               const Icon = item.icon;
               return (
                 <Link
@@ -84,18 +88,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="rail-foot">
-          <div className="rail-trust">
-            <ShieldCheck size={18} weight="duotone" />
-            <div>
-              <strong>{publicWritesLocked ? "Read-only showcase" : "Human controlled"}</strong>
-              <span>{publicWritesLocked ? "Reviewer writes require authorization" : "Synthetic data environment"}</span>
+          {publicWritesLocked ? (
+            <div className="rail-trust">
+              <Eye size={18} weight="duotone" />
+              <div><strong>Demo mode</strong><span>Changes are turned off</span></div>
             </div>
-          </div>
+          ) : null}
           <div className="operator">
             <span className="operator-avatar">TB</span>
             <div>
               <strong>Terry Benjamin Jr.</strong>
-              <span>Demo reviewer</span>
+              <span>Reviewer</span>
             </div>
           </div>
         </div>
@@ -103,22 +106,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="mobile-head">
         <Brand />
-        <div className="mobile-mode"><i /> {publicWritesLocked ? "Read-only" : "Demo"}</div>
+        {publicWritesLocked ? <div className="mobile-mode"><i /> View only</div> : null}
       </div>
 
       <main className="main-canvas">
         <div className="page-container">{children}</div>
         <footer className="app-footer">
-          <ClipboardText size={15} />
-          {publicWritesLocked ? "Public showcase · Read-only · " : ""}Synthetic evidence only · No credit decisions · Human approval required
+          Demo workspace · Sample applications
         </footer>
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
         {navigation.map((item) => {
-          const active = item.exact
-            ? pathname === item.href
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = isActivePath(pathname, item);
           const Icon = item.icon;
           return (
             <Link
@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-label={item.label}
             >
               <Icon size={21} weight={active ? "fill" : "regular"} />
-              <span>{item.label.replace("Audit & trust", "Trust")}</span>
+              <span>{item.label.replace("Add application", "Add")}</span>
             </Link>
           );
         })}

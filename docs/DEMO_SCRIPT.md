@@ -12,7 +12,7 @@ Open [the live signed-out demo](https://opsledger-web-production.up.railway.app)
 
 Show the architecture diagram.
 
-“Code handles file safety, extraction, totals, duplicates, recency, state transitions, and the audit ledger. A bounded agent reads five typed evidence results and returns a strict cited recommendation. It cannot change the deterministic route. A person controls consequential actions.”
+“OpsLedger checks the files, dates, totals, and matching business details the same way every time. AI turns those results into a short review summary, but it cannot change the application status. A reviewer chooses what happens next and adds a reason.”
 
 Do not call the readiness score a credit or risk score.
 
@@ -20,22 +20,22 @@ Do not call the readiness score a credit or risk score.
 
 Open `OPS-2026-0001`.
 
-- Show the 100/100 checklist and no open finding.
-- Open Evidence and point to source locators.
-- Show the agent summary, cited facts, provider identity, and limitations.
-- Click **Approve next stage** to show the confirmation dialog.
-- Explain that a rationale is required and the action is not a lending decision.
+- Show that all four required documents are present and there are no open issues.
+- Open **Documents** and point to the extracted details and original-file links.
+- Show the short review summary and open **Information used for this summary**.
+- Click **Approve for next step** to show the confirmation dialog.
+- Explain that a reason is required before the reviewer can save the step.
 - In the public link, show that the final control requires reviewer authorization and cancel the dialog. For an authorized local recording only, record approval, show the resulting audit event and PDF packet, then reset the synthetic fixture.
 
 ## 1:40–2:25 · Case B
 
 Open `OPS-2026-0002`.
 
-- Point to `REQUIRED_DOCUMENT_MISSING` and `FINANCIAL_EVIDENCE_STALE`.
-- Show the 286-day calculation and 180-day demonstration policy.
-- Edit one sentence in the prepared draft to show the human-in-the-loop control. In the public link, explain that saving is locked; in an authorized local take, save the edit.
+- Point to **Missing document** and **Financial record is out of date**.
+- Show the clear instructions to add the ownership form and a newer revenue record.
+- Edit one sentence in the message draft. In the public link, explain that saving is locked; in an authorized local take, save the edit.
 - Say: “OpsLedger has no send control. This remains a draft until a person uses an approved external channel.”
-- Open the audit timeline to show the edit without a message event.
+- Open **History** to show the edit without a message event.
 
 ## 2:25–3:05 · Case C
 
@@ -43,14 +43,14 @@ Open `OPS-2026-0003`.
 
 - Show the registration document’s different legal name.
 - Show the registration number collision with `OPS-2026-0001`.
-- Point out that code routes the case to Manual Investigation.
+- Point out the plain **Needs a closer look** status.
 - Show the resolution-note control but do not invent a resolution.
 
 ## 3:05–3:30 · Evidence and business path
 
 Show `docs/TESTING.md` or a clean terminal run.
 
-“The build currently passes 33 backend tests, three frontend unit tests, six real-browser flows, 20 live API checks, and an optimized production build. Railway built both application containers and serves the signed-out system against PostgreSQL. The first buyer hypothesis is a credit union, MSME support program, or advisory team with a document-heavy intake. A pilot would run beside the existing process and measure turnaround time, missing-document cycles, and reviewer overrides.”
+“The build currently passes 35 backend tests, seven frontend unit tests, seven real-browser flows, 20 live API checks, and an optimized production build. Railway built both application containers and serves the signed-out system against PostgreSQL. The first buyer hypothesis is a credit union, MSME support program, or advisory team with a document-heavy intake. A pilot would run beside the existing process and measure turnaround time, missing-document cycles, and reviewer overrides.”
 
 ## 3:30–3:45 · Close
 

@@ -1,12 +1,11 @@
 import { ArrowClockwise, FolderOpen, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
-export function PageLoading({ label = "Loading workspace" }: { label?: string }) {
+export function PageLoading({ label = "Loading" }: { label?: string }) {
   return (
     <div className="state-shell" role="status">
       <div className="loading-mark" aria-hidden="true"><i /><i /><i /></div>
       <strong>{label}</strong>
-      <span>Retrieving the evidence trail.</span>
     </div>
   );
 }
@@ -35,8 +34,8 @@ export function EmptyState({
 }
 
 export function ErrorState({
-  title = "The workspace could not load",
-  detail = "Check that the OpsLedger API is running, then try again.",
+  title = "We couldn't load this page",
+  detail = "Check your connection and try again.",
   onRetry,
 }: {
   title?: string;

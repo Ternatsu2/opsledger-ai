@@ -7,7 +7,7 @@ This repository is the working MVP for the Future Caribbean track **Finance, Pay
 **Live demo:** [opsledger-web-production.up.railway.app](https://opsledger-web-production.up.railway.app)<br>
 **Public repository:** [github.com/Ternatsu2/opsledger-ai](https://github.com/Ternatsu2/opsledger-ai)
 
-The public showcase is synthetic-data-only and read-only. Reviewers can inspect every case, evidence citation, deterministic finding, model boundary, PDF packet, and audit event. Mutating actions require a server-side reviewer token that is never shipped to the browser.
+The public showcase is sample-data-only and read-only. Reviewers can inspect every application, document source, issue, review summary, PDF packet, and saved update in plain language. Mutating actions require a server-side reviewer token that is never shipped to the browser.
 
 ## What the demo proves
 

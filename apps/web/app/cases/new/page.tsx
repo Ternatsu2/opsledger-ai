@@ -35,38 +35,38 @@ const documentInputs = [
   {
     name: "registration_file",
     type: "REGISTRATION_EVIDENCE",
-    label: "Registration evidence",
-    help: "PDF with legal name, registration number, and jurisdiction",
+    label: "Business registration",
+    help: "PDF with the registered name and number",
     accept: ".pdf,application/pdf",
   },
   {
     name: "revenue_file",
     type: "REVENUE_STATEMENT",
-    label: "Revenue statement",
-    help: "XLSX or CSV with period, revenue, currency, and as-of date",
+    label: "Revenue records",
+    help: "Spreadsheet showing recent revenue",
     accept: ".xlsx,.csv",
   },
   {
     name: "bank_file",
     type: "BANK_STATEMENT",
-    label: "Bank-style statement",
-    help: "XLSX or CSV transaction extract for the synthetic demo",
+    label: "Bank statement",
+    help: "CSV or spreadsheet of recent transactions",
     accept: ".xlsx,.csv",
   },
   {
     name: "ownership_file",
     type: "OWNERSHIP_DECLARATION",
-    label: "Ownership declaration",
-    help: "PDF showing declared owner and signature date",
+    label: "Ownership form",
+    help: "PDF listing the owner and signature date",
     accept: ".pdf,application/pdf",
   },
 ] as const;
 
 const initialProgress = [
-  "Create case record",
-  "Store evidence securely",
-  "Run deterministic checks",
-  "Prepare grounded review",
+  "Save the application",
+  "Add the documents",
+  "Check the details",
+  "Prepare the summary",
 ];
 
 function TextField({
@@ -166,10 +166,10 @@ export default function NewCasePage() {
       router.push(`/cases/${created.id}`);
     } catch (caught) {
       if (caught instanceof ApiRequestError) {
-        setSubmitError(`${caught.message} Reference ${caught.correlationId}.`);
+        setSubmitError(caught.message);
         setErrors(caught.fieldErrors);
       } else {
-        setSubmitError("The intake stopped before completion. The saved case can be retried.");
+        setSubmitError("We couldn't create the application. Try again.");
       }
       setBusy(false);
     }
@@ -178,12 +178,12 @@ export default function NewCasePage() {
   return (
     <div className="intake-page">
       <header className="intake-header">
-        <Link href="/cases" className="back-link"><ArrowLeft size={15} /> Case queue</Link>
+        <Link href="/cases" className="back-link"><ArrowLeft size={15} /> Applications</Link>
         <div>
-          <span className="mono-label">New synthetic case</span>
-          <strong>Financing-readiness intake</strong>
+          <span className="mono-label">New</span>
+          <strong>Add application</strong>
         </div>
-        <span className="save-state"><i /> Local demo workspace</span>
+        <span className="save-state"><i /> {publicWritesLocked ? "View-only demo" : "New application"}</span>
       </header>
 
       <form onSubmit={onSubmit} className="intake-layout">
@@ -192,7 +192,7 @@ export default function NewCasePage() {
             <span className="step-number">01</span>
             <div>
               <h1>Business and request</h1>
-              <p>Capture the intake record that deterministic checks will compare with evidence.</p>
+              <p>Enter the details from the application.</p>
             </div>
           </section>
 
@@ -200,7 +200,7 @@ export default function NewCasePage() {
             <div className="form-grid two-column">
               <TextField
                 name="legal_business_name"
-                label="Legal business name"
+                label="Registered business name"
                 placeholder="e.g. Island Harvest Foods Ltd."
                 autoComplete="organization"
                 error={errors.legal_business_name}
@@ -208,7 +208,7 @@ export default function NewCasePage() {
               <TextField
                 name="trading_name"
                 label="Trading name (optional)"
-                placeholder="Public-facing name"
+                placeholder="Name customers know"
                 error={errors.trading_name}
               />
               <TextField
@@ -218,7 +218,7 @@ export default function NewCasePage() {
                 error={errors.registration_number}
               />
               <label className="field">
-                <span>Jurisdiction</span>
+                <span>Country or territory</span>
                 <select name="jurisdiction" className="select" defaultValue="Antigua and Barbuda">
                   <option>Antigua and Barbuda</option>
                   <option>Barbados</option>
@@ -233,7 +233,7 @@ export default function NewCasePage() {
               </label>
               <TextField
                 name="industry"
-                label="Operating industry"
+                label="Industry"
                 placeholder="e.g. Food manufacturing"
                 error={errors.industry}
               />
@@ -247,7 +247,7 @@ export default function NewCasePage() {
                 </label>
                 <TextField
                   name="requested_amount"
-                  label="Requested amount"
+                  label="Amount requested"
                   type="number"
                   min="1"
                   step="0.01"
@@ -258,7 +258,7 @@ export default function NewCasePage() {
               </div>
               <TextField
                 name="annual_revenue"
-                label="Declared annual revenue"
+                label="Annual revenue"
                 type="number"
                 min="0"
                 step="0.01"
@@ -267,11 +267,11 @@ export default function NewCasePage() {
                 error={errors.annual_revenue}
               />
               <div className="field full-span">
-                <span>Funding purpose</span>
+                <span>How will the funds be used?</span>
                 <textarea
                   name="funding_purpose"
                   className={`textarea ${errors.funding_purpose ? "input-error" : ""}`}
-                  placeholder="Describe the specific use of funds and the operational outcome."
+                  placeholder="For example: purchase equipment and expand delivery capacity."
                   aria-invalid={Boolean(errors.funding_purpose)}
                 />
                 {errors.funding_purpose ? <span className="field-error">{errors.funding_purpose}</span> : null}
@@ -282,8 +282,8 @@ export default function NewCasePage() {
           <section className="intake-intro section-step">
             <span className="step-number">02</span>
             <div>
-              <h2>Primary contact</h2>
-              <p>Used only to prepare a follow-up draft. OpsLedger never sends it automatically.</p>
+              <h2>Main contact</h2>
+              <p>Who should the reviewer contact if something is missing?</p>
             </div>
           </section>
           <div className="form-section">
@@ -309,8 +309,8 @@ export default function NewCasePage() {
           <section className="intake-intro section-step">
             <span className="step-number">03</span>
             <div>
-              <h2>Evidence package</h2>
-              <p>PDF, CSV, or XLSX only. Each file is hashed, stored privately, and cited by the review.</p>
+              <h2>Documents</h2>
+              <p>Add the files included with this application.</p>
             </div>
           </section>
           <div className="upload-grid">
@@ -329,8 +329,8 @@ export default function NewCasePage() {
 
         <aside className="intake-aside">
           <div className="intake-summary">
-            <span className="mono-label">What happens next</span>
-            <h2>One submission, four bounded steps</h2>
+            <span className="mono-label">After you submit</span>
+            <h2>We'll prepare the application</h2>
             <div className="progress-list">
               {initialProgress.map((item, index) => (
                 <div
@@ -343,33 +343,23 @@ export default function NewCasePage() {
                 </div>
               ))}
             </div>
-            <div className="notice notice-info">
-              <ShieldCheck size={19} weight="duotone" />
-              <div>
-                <strong>A person stays in control</strong>
-                The final workflow action remains locked until a reviewer records a rationale.
-              </div>
-            </div>
             {publicWritesLocked ? (
               <div className="notice notice-info">
                 <ShieldCheck size={19} weight="duotone" />
                 <div>
-                  <strong>Public showcase is read-only</strong>
-                  Intake writes require reviewer authorization. The three synthetic cases remain fully inspectable.
+                  <strong>Demo mode</strong>
+                  Creating applications is turned off.
                 </div>
               </div>
             ) : null}
             <div className="synthetic-note">
               <Info size={16} />
-              Use synthetic documents only. Do not upload real personal, bank, or company data.
+              Use sample files in this demo.
             </div>
             {submitError ? <div className="notice notice-error">{submitError}</div> : null}
             <button className="button button-primary submit-intake" type="submit" disabled={busy || publicWritesLocked}>
-              {busy ? <><SpinnerGap className="spinner" size={17} /> Processing package</> : publicWritesLocked ? <>Reviewer access required <ShieldCheck size={16} /></> : <>Submit for review <ArrowRight size={16} /></>}
+              {busy ? <><SpinnerGap className="spinner" size={17} /> Creating application</> : publicWritesLocked ? <>View-only demo <ShieldCheck size={16} /></> : <>Create application <ArrowRight size={16} /></>}
             </button>
-            <p className="submission-footnote">
-              Submission is recorded in the append-only audit ledger. No applicant message is sent.
-            </p>
           </div>
         </aside>
       </form>

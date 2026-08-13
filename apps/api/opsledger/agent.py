@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -206,6 +207,73 @@ def _expected_action(case: Case) -> str:
     return CaseStage.READY_FOR_HUMAN_REVIEW.value
 
 
+FINDING_LABELS = {
+    "REQUIRED_DOCUMENT_MISSING": "Missing document",
+    "REQUIRED_FIELD_MISSING": "Missing application detail",
+    "FINANCIAL_EVIDENCE_STALE": "Financial record is out of date",
+    "FINANCIAL_DATE_INVALID": "Financial record has an invalid date",
+    "LEGAL_NAME_MISMATCH": "Business name does not match",
+    "REGISTRATION_NUMBER_MISMATCH": "Registration number does not match",
+    "JURISDICTION_MISMATCH": "Country or territory does not match",
+    "DUPLICATE_REGISTRATION": "Registration number already in use",
+    "DUPLICATE_BUSINESS_CONTACT": "Possible duplicate application",
+    "DUPLICATE_DOCUMENT": "Document already used",
+    "REVENUE_TOTAL_MISMATCH": "Revenue total does not add up",
+    "CURRENCY_MISMATCH": "Currency does not match",
+    "CURRENCY_NOT_SUPPORTED": "Currency is not supported",
+}
+
+
+def plain_finding(finding: dict[str, Any]) -> str:
+    rule_code = finding["rule_code"]
+    message = finding["message"]
+    if rule_code == "REQUIRED_DOCUMENT_MISSING":
+        document = message.split(" is required", 1)[0].lower()
+        document = document.replace("ownership declaration", "ownership form")
+        return f"Add the missing {document}."
+    if rule_code == "REQUIRED_FIELD_MISSING":
+        field = message.split(" is required", 1)[0].lower()
+        return f"Add the missing {field}."
+    if rule_code == "FINANCIAL_EVIDENCE_STALE":
+        days = re.search(r"is (\d+) days old", message)
+        return (
+            f"The revenue record is {days.group(1)} days old. Add a newer one."
+            if days
+            else "Add a newer revenue record."
+        )
+    if rule_code == "FINANCIAL_DATE_INVALID":
+        return "The revenue record is dated after the review date. Check the file date."
+    if rule_code == "LEGAL_NAME_MISMATCH":
+        return "A document uses a different business name from the application."
+    if rule_code == "REGISTRATION_NUMBER_MISMATCH":
+        return "A document uses a different registration number from the application."
+    if rule_code == "JURISDICTION_MISMATCH":
+        return "A document lists a different country or territory from the application."
+    if rule_code == "DUPLICATE_REGISTRATION":
+        reference = re.search(r"OPS-\d{4}-\d{4}", message)
+        return (
+            f"This registration number also appears on {reference.group(0)}."
+            if reference
+            else "This registration number appears on another open application."
+        )
+    if rule_code == "DUPLICATE_BUSINESS_CONTACT":
+        reference = re.search(r"OPS-\d{4}-\d{4}", message)
+        return (
+            f"The business name and contact also appear on {reference.group(0)}."
+            if reference
+            else "The business name and contact appear on another open application."
+        )
+    if rule_code == "DUPLICATE_DOCUMENT":
+        return "This file was already added to another application."
+    if rule_code == "REVENUE_TOTAL_MISMATCH":
+        return "The stated revenue total does not match the rows in the file."
+    if rule_code == "CURRENCY_MISMATCH":
+        return "A financial document uses a different currency from the application."
+    if rule_code == "CURRENCY_NOT_SUPPORTED":
+        return "Choose a supported currency."
+    return message
+
+
 def _allowed_citations(context: dict[str, Any]) -> set[str]:
     allowed = {context["policy"]["citation_id"]}
     allowed.update(value["citation_id"] for value in context["case"]["values"].values())
@@ -254,8 +322,8 @@ def _deterministic_recommendation(
     evidence: list[EvidenceCitation] = [
         EvidenceCitation(
             citation_id=case_values["legal_business_name"]["citation_id"],
-            label="Intake record",
-            claim=f"The intake names {case.legal_business_name} as the applicant business.",
+            label="Business name",
+            claim=f"The application names {case.legal_business_name} as the business.",
         ),
         EvidenceCitation(
             citation_id=case_values["requested_amount"]["citation_id"],
@@ -267,8 +335,8 @@ def _deterministic_recommendation(
         evidence.extend(
             EvidenceCitation(
                 citation_id=finding["id"],
-                label=finding["rule_code"].replace("_", " ").title(),
-                claim=finding["message"],
+                label=FINDING_LABELS.get(finding["rule_code"], "Item to check"),
+                claim=plain_finding(finding),
             )
             for finding in findings[:4]
         )
@@ -276,26 +344,23 @@ def _deterministic_recommendation(
         evidence.append(
             EvidenceCitation(
                 citation_id=context["policy"]["citation_id"],
-                label="Synthetic demo policy",
-                claim=(
-                    "The required document and consistency checks completed without "
-                    "an open finding."
-                ),
+                label="Document checklist",
+                claim="The required documents are present and no open issues were found.",
             )
         )
 
     unresolved = [
         UnresolvedFinding(
             finding_id=finding["id"],
-            explanation=finding["message"],
+            explanation=plain_finding(finding),
         )
         for finding in findings
     ]
     missing = [
         MissingInformationItem(
-            item=finding["message"],
+            item=plain_finding(finding),
             rule_code=finding["rule_code"],
-            reason=("The synthetic demo policy requires the reviewer to resolve this finding."),
+            reason="This item is needed before the review can continue.",
         )
         for finding in findings
         if finding["rule_code"]
@@ -311,30 +376,23 @@ def _deterministic_recommendation(
         follow_up = (
             f"Subject: Information needed for {case.reference}\n\n"
             f"Hello {case.contact_name},\n\n"
-            "We reviewed the financing-readiness package and need the items below "
-            "before the review can continue:\n"
+            "We reviewed your application and need the items below before we can continue:\n"
             f"{requests}\n\n"
-            "Please reply with updated synthetic demo documents. No financing "
-            "decision has been made."
+            "Please reply with the updated documents. Thank you."
         )
 
     if action == CaseStage.READY_FOR_HUMAN_REVIEW.value:
-        reason = (
-            "The configured completeness and consistency checks finished without "
-            "a blocking finding."
-        )
+        reason = "All required documents are present and no open issues were found."
     elif action == CaseStage.MANUAL_INVESTIGATION.value:
-        reason = "A duplicate or identity conflict requires a reviewer to resolve the evidence."
+        reason = "Some application details do not match and need a closer look."
     else:
-        reason = "One or more required or current items are missing from the package."
+        reason = "One or more documents need to be added or updated."
 
     return AgentRecommendation(
         case_summary=(
             f"{case.legal_business_name} submitted a {case.currency} "
             f"{case.requested_amount:,.2f} request to "
-            f"{case.funding_purpose.rstrip(' .').lower()}. "
-            f"The package has a transparent readiness score of "
-            f"{case.completeness_score}/100."
+            f"{case.funding_purpose.rstrip(' .').lower()}."
         ),
         evidence_summary=evidence,
         unresolved_findings=unresolved,
@@ -343,8 +401,8 @@ def _deterministic_recommendation(
         recommendation_reason=reason,
         follow_up_draft=follow_up,
         limitations=[
-            "This review uses synthetic data and a buildathon demonstration policy.",
-            "The recommendation concerns workflow readiness, not creditworthiness or eligibility.",
+            "This demo uses sample information.",
+            "A reviewer must check the original documents and decide what happens next.",
         ],
     )
 
@@ -363,10 +421,13 @@ def _prompt(
         "Keep deterministic findings intact. The only allowed recommended_action for "
         f"this run is {expected_action}. A person will make the consequential decision. "
         "Set follow_up_draft only for NEEDS_INFORMATION; set it to null for every other route. "
+        "Write all reviewer-facing text in short, everyday language for a nontechnical user. "
+        "Do not mention internal stages, routes, validation, schemas, models, policy versions, "
+        "confidence scores, deterministic processing, or synthetic evidence in that text. "
         "Return a JSON object that matches the supplied schema. Do not include hidden "
         "reasoning or Markdown."
     )
-    return f"""You are the bounded review agent inside OpsLedger AI.
+    return f"""You prepare a short application review inside OpsLedger AI.
 
 {guardrails}
 {repair}

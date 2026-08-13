@@ -10,12 +10,10 @@ import {
   DownloadSimple,
   File,
   FileText,
-  IdentificationCard,
   Info,
   MagnifyingGlass,
   NotePencil,
   Play,
-  Robot,
   ShieldCheck,
   SpinnerGap,
   UserCircle,
@@ -29,11 +27,24 @@ import { useEffect, useMemo, useState } from "react";
 import { DecisionDialog } from "@/components/decision-dialog";
 import { StageBadge } from "@/components/stage-badge";
 import { ErrorState, PageLoading } from "@/components/states";
-import { ApiRequestError, apiFetch, assetUrl, idempotencyHeaders } from "@/lib/api";
-import { dateTime, money, sentenceCase, shortHash } from "@/lib/format";
+import { apiFetch, assetUrl, idempotencyHeaders } from "@/lib/api";
+import {
+  actorLabel,
+  dateTime,
+  documentLabel,
+  documentProgress,
+  eventLabel,
+  fileTypeLabel,
+  findingText,
+  issueLabel,
+  money,
+  plainMessageDraft,
+  sourceLabel,
+  stageLabel,
+} from "@/lib/format";
 import type { AgentRun, CaseDetail, Finding, SystemStatus } from "@/lib/types";
 
-type WorkspaceTab = "review" | "evidence" | "audit";
+type WorkspaceTab = "summary" | "documents" | "history";
 
 interface DecisionConfig {
   actionType: string;
@@ -46,23 +57,23 @@ interface DecisionConfig {
 
 const guidance = {
   READY_FOR_HUMAN_REVIEW: {
-    title: "The package is ready for a person",
-    text: "Required evidence is present and deterministic checks found no open exception. Review cited evidence before recording an approval.",
+    title: "Ready for review",
+    text: "All required documents are present. Check the summary, then choose a next step.",
     tone: "ready",
   },
   NEEDS_INFORMATION: {
-    title: "The workflow needs current or missing evidence",
-    text: "Review the blocking findings and edit the prepared follow-up. Nothing will be sent from OpsLedger.",
+    title: "More information needed",
+    text: "Review the items below and update the message draft before contacting the business.",
     tone: "warning",
   },
   MANUAL_INVESTIGATION: {
-    title: "Identity or duplicate evidence needs investigation",
-    text: "The case is held. Resolve the named conflicts outside the agent before changing its workflow state.",
+    title: "Needs a closer look",
+    text: "Some details do not match. Check the original documents before taking action.",
     tone: "danger",
   },
   APPROVED_FOR_NEXT_STAGE: {
-    title: "A reviewer approved the next workflow stage",
-    text: "The approval and rationale are preserved in the audit ledger. This is not a financing decision.",
+    title: "Approved for the next step",
+    text: "The reviewer's decision and note are saved with this application.",
     tone: "ready",
   },
 } as const;
@@ -77,7 +88,7 @@ export default function CaseWorkspacePage() {
   const { id } = useParams<{ id: string }>();
   const [caseRecord, setCaseRecord] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<WorkspaceTab>("review");
+  const [tab, setTab] = useState<WorkspaceTab>("summary");
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [decision, setDecision] = useState<DecisionConfig | null>(null);
@@ -93,9 +104,9 @@ export default function CaseWorkspacePage() {
       ]);
       setCaseRecord(detail);
       setPublicWritesLocked(system.public_writes_locked);
-      setDraft(latestRun(detail.agent_runs)?.structured_output_json?.follow_up_draft ?? "");
+      setDraft(plainMessageDraft(latestRun(detail.agent_runs)?.structured_output_json?.follow_up_draft ?? ""));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The case workspace could not load.");
+      setError(caught instanceof Error ? caught.message : "We couldn't load this application.");
     }
   };
 
@@ -111,20 +122,16 @@ export default function CaseWorkspacePage() {
         method: "POST",
         headers: idempotencyHeaders(),
       });
-      setMessage(
-        command === "process"
-          ? "Deterministic extraction and validation completed."
-          : "The bounded review completed and passed grounding checks.",
-      );
+      setMessage(command === "process" ? "Application checks completed." : "Review summary refreshed.");
       await load();
     } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "The command could not complete.");
+      setMessage(caught instanceof Error ? caught.message : "We couldn't finish that action.");
     } finally {
       setBusy(null);
     }
   };
 
-  const submitDecision = async (rationale: string) => {
+  const submitDecision = async (reason: string) => {
     if (!decision) return;
     setBusy("decision");
     try {
@@ -133,15 +140,15 @@ export default function CaseWorkspacePage() {
         body: JSON.stringify({
           reviewer_id: "Terry Benjamin Jr.",
           action_type: decision.actionType,
-          rationale,
+          rationale: reason,
           finding_id: decision.findingId ?? null,
         }),
       });
       setDecision(null);
-      setMessage("Reviewer action recorded in the audit ledger.");
+      setMessage("Next step saved.");
       await load();
     } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "The reviewer action was not recorded.");
+      setMessage(caught instanceof Error ? caught.message : "We couldn't save that step.");
     } finally {
       setBusy(null);
     }
@@ -149,7 +156,7 @@ export default function CaseWorkspacePage() {
 
   const saveDraft = async () => {
     if (draft.trim().length < 10) {
-      setMessage("The follow-up draft is too short to save.");
+      setMessage("Add a little more detail before saving the draft.");
       return;
     }
     setBusy("draft");
@@ -159,14 +166,14 @@ export default function CaseWorkspacePage() {
         body: JSON.stringify({
           reviewer_id: "Terry Benjamin Jr.",
           action_type: "EDIT_AGENT_DRAFT",
-          rationale: "Reviewed and edited the prepared information request.",
+          rationale: "Reviewed and edited the information request.",
           edited_draft: draft,
         }),
       });
-      setMessage("Draft saved. No message was sent.");
+      setMessage("Draft saved.");
       await load();
     } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "The draft could not be saved.");
+      setMessage(caught instanceof Error ? caught.message : "We couldn't save the draft.");
     } finally {
       setBusy(null);
     }
@@ -179,10 +186,10 @@ export default function CaseWorkspacePage() {
         method: "PATCH",
         body: JSON.stringify({ assigned_reviewer_id: "Terry Benjamin Jr." }),
       });
-      setMessage("Case assigned to Terry Benjamin Jr.");
+      setMessage("Assigned to Terry Benjamin Jr.");
       await load();
     } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "Assignment could not be updated.");
+      setMessage(caught instanceof Error ? caught.message : "We couldn't update the reviewer.");
     } finally {
       setBusy(null);
     }
@@ -193,18 +200,57 @@ export default function CaseWorkspacePage() {
     [caseRecord],
   );
 
+  const documentsById = useMemo(
+    () => new Map((caseRecord?.documents ?? []).map((document) => [document.id, document])),
+    [caseRecord],
+  );
+
   if (error) {
     return <div className="page-pad"><ErrorState detail={error} onRetry={load} /></div>;
   }
 
   if (!caseRecord) {
-    return <PageLoading label="Opening evidence workspace" />;
+    return <PageLoading label="Loading application" />;
   }
 
   const agentRun = latestRun(caseRecord.agent_runs);
   const agentOutput = agentRun?.structured_output_json;
   const openFindings = caseRecord.findings.filter((finding) => finding.status === "OPEN");
   const statusGuidance = guidance[caseRecord.stage as keyof typeof guidance];
+  const { received: receivedDocuments, required: requiredDocuments } = documentProgress(
+    caseRecord.completeness_breakdown,
+  );
+  const findingsById = new Map(caseRecord.findings.map((finding) => [finding.id, finding]));
+  const fieldsById = new Map(caseRecord.extracted_fields.map((field) => [field.id, field]));
+  const purpose = caseRecord.funding_purpose.trim().replace(/[.]+$/, "");
+  const purposeText = purpose ? purpose.charAt(0).toLowerCase() + purpose.slice(1) : "support the business";
+  const caseEvidence: Record<string, { label: string; claim: string }> = {
+    legal_business_name: { label: "Business name", claim: caseRecord.legal_business_name },
+    registration_number: { label: "Registration number", claim: caseRecord.registration_number },
+    jurisdiction: { label: "Country or territory", claim: caseRecord.jurisdiction },
+    industry: { label: "Industry", claim: caseRecord.industry },
+    requested_amount: {
+      label: "Amount requested",
+      claim: money(caseRecord.requested_amount, caseRecord.currency),
+    },
+    funding_purpose: { label: "Use of funds", claim: caseRecord.funding_purpose },
+    annual_revenue: {
+      label: "Annual revenue",
+      claim: money(caseRecord.annual_revenue, caseRecord.currency),
+    },
+    stage: { label: "Status", claim: stageLabel(caseRecord.stage) },
+    completeness_score: {
+      label: "Documents",
+      claim: `${receivedDocuments} of ${requiredDocuments} required documents received`,
+    },
+  };
+  const recommendationReason = caseRecord.stage === "READY_FOR_HUMAN_REVIEW"
+    ? "All required documents are present and no open issues were found."
+    : caseRecord.stage === "NEEDS_INFORMATION"
+      ? `${openFindings.length} item${openFindings.length === 1 ? " needs" : "s need"} to be added or updated before the review can continue.`
+      : caseRecord.stage === "MANUAL_INVESTIGATION"
+        ? `${openFindings.length} detail${openFindings.length === 1 ? " needs" : "s need"} a closer look because the application and documents do not match.`
+        : "Check the application and choose what should happen next.";
   const canProcess = [
     "DRAFT",
     "EXTRACTION_FAILED",
@@ -223,7 +269,7 @@ export default function CaseWorkspacePage() {
     <div className="workspace-page">
       <header className="workspace-head">
         <div className="workspace-breadcrumb">
-          <Link href="/cases"><ArrowLeft size={14} /> Cases</Link>
+          <Link href="/cases"><ArrowLeft size={14} /> Applications</Link>
           <span>/</span>
           <strong>{caseRecord.reference}</strong>
         </div>
@@ -237,72 +283,75 @@ export default function CaseWorkspacePage() {
           </div>
           <div className="workspace-state">
             <StageBadge stage={caseRecord.stage} />
-            <span>Version {caseRecord.version} · updated {dateTime(caseRecord.updated_at)}</span>
+            <span>Updated {dateTime(caseRecord.updated_at)}</span>
           </div>
         </div>
       </header>
 
-      <div className="workflow-ribbon" aria-label="Workflow progress">
-        <div className="complete"><span><Check size={12} /></span><p>Intake captured<small>Case record</small></p></div>
+      <div className="workflow-ribbon" aria-label="Application progress">
+        <div className="complete"><span><Check size={12} /></span><p>Received</p></div>
         <i />
-        <div className="complete"><span><Check size={12} /></span><p>Rules evaluated<small>{caseRecord.findings.length} finding{caseRecord.findings.length === 1 ? "" : "s"}</small></p></div>
+        <div className="complete"><span><Check size={12} /></span><p>Documents checked</p></div>
         <i />
-        <div className={agentRun ? "complete" : caseRecord.stage === "AGENT_REVIEW" ? "current" : ""}><span>{agentRun ? <Check size={12} /> : "3"}</span><p>Bounded review<small>{agentRun ? agentRun.model_provider : "Awaiting run"}</small></p></div>
+        <div className={agentRun ? "complete" : caseRecord.stage === "AGENT_REVIEW" ? "current" : ""}><span>{agentRun ? <Check size={12} /> : "3"}</span><p>Review ready</p></div>
         <i />
-        <div className={caseRecord.stage === "APPROVED_FOR_NEXT_STAGE" ? "complete" : "current"}><span>{caseRecord.stage === "APPROVED_FOR_NEXT_STAGE" ? <Check size={12} /> : "4"}</span><p>Human gate<small>{caseRecord.stage === "APPROVED_FOR_NEXT_STAGE" ? "Recorded" : "Reviewer owned"}</small></p></div>
+        <div className={caseRecord.stage === "APPROVED_FOR_NEXT_STAGE" ? "complete" : "current"}><span>{caseRecord.stage === "APPROVED_FOR_NEXT_STAGE" ? <Check size={12} /> : "4"}</span><p>Decision</p></div>
       </div>
 
       <div className="workspace-body">
         {statusGuidance ? (
           <div className={`case-guidance guidance-${statusGuidance.tone}`}>
-            {statusGuidance.tone === "ready" ? <CheckCircle size={21} weight="duotone" /> : statusGuidance.tone === "warning" ? <Info size={21} weight="duotone" /> : <WarningCircle size={21} weight="duotone" />}
+            {statusGuidance.tone === "ready" ? <CheckCircle size={22} weight="duotone" /> : statusGuidance.tone === "warning" ? <Info size={22} weight="duotone" /> : <WarningCircle size={22} weight="duotone" />}
             <div><strong>{statusGuidance.title}</strong><span>{statusGuidance.text}</span></div>
           </div>
         ) : null}
 
         {publicWritesLocked ? (
           <div className="workspace-message showcase-lock" role="status">
-            <ShieldCheck size={16} /> Public showcase is read-only. You can inspect the evidence, agent output, audit trail, and approval boundary; recording changes requires reviewer authorization.
+            <Info size={17} /> Demo mode: changes are turned off.
           </div>
         ) : null}
 
         {message ? (
           <div className="workspace-message" role="status">
-            <Info size={16} /> {message}
+            <Info size={17} /> {message}
             <button type="button" onClick={() => setMessage(null)} aria-label="Dismiss message">×</button>
           </div>
         ) : null}
 
         <section className="case-facts">
-          <div><span>Financing request</span><strong>{money(caseRecord.requested_amount, caseRecord.currency)}</strong><small>{caseRecord.funding_purpose}</small></div>
+          <div><span>Amount requested</span><strong>{money(caseRecord.requested_amount, caseRecord.currency)}</strong><small>{caseRecord.funding_purpose}</small></div>
           <div><span>Registration</span><strong>{caseRecord.registration_number}</strong><small>{caseRecord.jurisdiction}</small></div>
-          <div className="readiness-fact"><span>Package readiness</span><strong>{caseRecord.completeness_score}<i>/100</i></strong><small>{caseRecord.documents.length} evidence files stored</small></div>
-          <div><span>Assigned reviewer</span><strong>{caseRecord.assigned_reviewer_id ?? "Unassigned"}</strong><small>{caseRecord.assigned_reviewer_id ? "Human owner recorded" : "Take ownership before deciding"}</small></div>
+          <div className="readiness-fact"><span>Documents</span><strong>{receivedDocuments} of {requiredDocuments}</strong><small>required items received</small></div>
+          <div><span>Reviewer</span><strong>{caseRecord.assigned_reviewer_id ?? "Unassigned"}</strong><small>{caseRecord.assigned_reviewer_id ? "Assigned" : "Choose a reviewer before deciding"}</small></div>
         </section>
 
         <div className="workspace-actions">
-          <div>
-            {!caseRecord.assigned_reviewer_id ? (
-              <button type="button" className="button button-secondary" onClick={assignToMe} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
-                <UserCircle size={17} /> {busy === "assign" ? "Assigning" : "Assign to me"}
-              </button>
-            ) : null}
-            {canProcess ? (
-              <button type="button" className="button button-secondary" onClick={() => runCommand("process")} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
-                {busy === "process" ? <SpinnerGap className="spinner" size={16} /> : <Play size={16} />}
-                Re-run deterministic checks
-              </button>
-            ) : null}
-            {canRunAgent ? (
-              <button type="button" className="button button-dark" onClick={() => runCommand("agent-review")} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
-                {busy === "agent-review" ? <SpinnerGap className="spinner" size={16} /> : <Robot size={16} />}
-                Re-run bounded review
-              </button>
-            ) : null}
-          </div>
+          <details className="more-actions">
+            <summary>More actions</summary>
+            <div>
+              {!caseRecord.assigned_reviewer_id ? (
+                <button type="button" className="button button-secondary" onClick={assignToMe} disabled={Boolean(busy) || publicWritesLocked}>
+                  <UserCircle size={17} /> {busy === "assign" ? "Assigning" : "Assign to me"}
+                </button>
+              ) : null}
+              {canProcess ? (
+                <button type="button" className="button button-secondary" onClick={() => runCommand("process")} disabled={Boolean(busy) || publicWritesLocked}>
+                  {busy === "process" ? <SpinnerGap className="spinner" size={16} /> : <Play size={16} />}
+                  Check documents again
+                </button>
+              ) : null}
+              {canRunAgent ? (
+                <button type="button" className="button button-secondary" onClick={() => runCommand("agent-review")} disabled={Boolean(busy) || publicWritesLocked}>
+                  {busy === "agent-review" ? <SpinnerGap className="spinner" size={16} /> : <ClipboardText size={16} />}
+                  Refresh summary
+                </button>
+              ) : null}
+            </div>
+          </details>
           <div>
             <a className="button button-secondary" href={assetUrl(`/cases/${caseRecord.id}/packet.pdf`)} target="_blank" rel="noreferrer">
-              <DownloadSimple size={16} /> Review packet
+              <DownloadSimple size={16} /> Download review
             </a>
             {caseRecord.stage === "READY_FOR_HUMAN_REVIEW" ? (
               <button
@@ -310,36 +359,36 @@ export default function CaseWorkspacePage() {
                 className="button button-primary"
                 onClick={() => setDecision({
                   actionType: "APPROVE_FOR_NEXT_STAGE",
-                  title: "Approve the next workflow stage?",
-                  detail: "Confirm that you reviewed the cited evidence and open findings. The audit ledger will preserve your rationale.",
-                  confirmLabel: "Record approval",
+                  title: "Approve this application for the next step?",
+                  detail: "Check the documents and summary, then add a reason.",
+                  confirmLabel: "Approve for next step",
                 })}
               >
-                <ShieldCheck size={17} /> Approve next stage
+                <ShieldCheck size={17} /> Approve for next step
               </button>
             ) : null}
           </div>
         </div>
 
-        <nav className="workspace-tabs" aria-label="Case workspace sections">
-          <button type="button" className={tab === "review" ? "active" : ""} onClick={() => setTab("review")}>
-            <ClipboardText size={16} /> Review <span>{openFindings.length}</span>
+        <nav className="workspace-tabs" aria-label="Application sections">
+          <button type="button" className={tab === "summary" ? "active" : ""} onClick={() => setTab("summary")}>
+            <ClipboardText size={17} /> Summary <span>{openFindings.length}</span>
           </button>
-          <button type="button" className={tab === "evidence" ? "active" : ""} onClick={() => setTab("evidence")}>
-            <FileText size={16} /> Evidence <span>{caseRecord.documents.length}</span>
+          <button type="button" className={tab === "documents" ? "active" : ""} onClick={() => setTab("documents")}>
+            <FileText size={17} /> Documents <span>{caseRecord.documents.length}</span>
           </button>
-          <button type="button" className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>
-            <ClockCounterClockwise size={16} /> Audit trail <span>{caseRecord.audit_events.length}</span>
+          <button type="button" className={tab === "history" ? "active" : ""} onClick={() => setTab("history")}>
+            <ClockCounterClockwise size={17} /> History <span>{caseRecord.audit_events.length}</span>
           </button>
         </nav>
 
-        {tab === "review" ? (
+        {tab === "summary" ? (
           <div className="review-grid">
             <div className="review-primary">
               <section className="review-section">
                 <div className="section-heading">
-                  <div><h2>Deterministic findings</h2><p>Rules route the workflow before the model is called.</p></div>
-                  <span className="mono-label">{openFindings.length} open</span>
+                  <div><h2>Items to check</h2><p>{openFindings.length ? "Resolve these before moving forward." : "This application has no open issues."}</p></div>
+                  <span className="item-count">{openFindings.length} open</span>
                 </div>
                 {caseRecord.findings.length ? (
                   <div className="finding-list">
@@ -350,9 +399,9 @@ export default function CaseWorkspacePage() {
                         onResolve={() => setDecision({
                           actionType: "RECORD_RESOLUTION_NOTE",
                           findingId: finding.id,
-                          title: "Record a resolution note?",
-                          detail: "Document what evidence you checked. Re-run deterministic checks before changing the case route.",
-                          confirmLabel: "Save resolution note",
+                          title: "Add a note to this item?",
+                          detail: "Describe what you checked or what still needs attention.",
+                          confirmLabel: "Save note",
                         })}
                       />
                     ))}
@@ -360,44 +409,69 @@ export default function CaseWorkspacePage() {
                 ) : (
                   <div className="clear-findings">
                     <CheckCircle size={24} weight="duotone" />
-                    <div><strong>No open deterministic exception</strong><span>Required evidence, recency, identity, duplication, totals, and currency checks passed.</span></div>
+                    <div><strong>No issues found</strong><span>The required documents are present and the details match.</span></div>
                   </div>
                 )}
               </section>
 
               <section className="review-section agent-section">
                 <div className="section-heading">
-                  <div><h2>Bounded agent analysis</h2><p>Schema-validated summary grounded in typed tool results.</p></div>
-                  {agentRun ? <span className="model-tag"><Robot size={13} /> {agentRun.model_provider}</span> : null}
+                  <div><h2>Review summary</h2><p>Check the suggestion against the documents.</p></div>
                 </div>
                 {agentOutput ? (
                   <div className="agent-analysis">
                     <div className="agent-summary">
-                      <span className="mono-label">Case summary</span>
-                      <p>{agentOutput.case_summary}</p>
+                      <p>
+                        {caseRecord.legal_business_name} is requesting {money(caseRecord.requested_amount, caseRecord.currency)}. The funds would be used to {purposeText}.
+                      </p>
                     </div>
                     <div className="agent-recommendation">
-                      <span>Proposed workflow action</span>
-                      <strong>{sentenceCase(agentOutput.recommended_action)}</strong>
-                      <p>{agentOutput.recommendation_reason}</p>
+                      <span>Suggested next step</span>
+                      <strong>{stageLabel(agentOutput.recommended_action)}</strong>
+                      <p>{recommendationReason}</p>
                     </div>
-                    <div className="citation-list">
-                      <span className="mono-label">Evidence citations</span>
-                      {agentOutput.evidence_summary.map((citation, index) => (
-                        <div key={`${citation.citation_id}-${index}`}>
-                          <span>{String(index + 1).padStart(2, "0")}</span>
-                          <p><strong>{citation.label}</strong>{citation.claim}</p>
-                          <code>{citation.citation_id.slice(0, 18)}{citation.citation_id.length > 18 ? "…" : ""}</code>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="agent-limits">
-                      <Info size={17} />
-                      <div>{agentOutput.limitations.map((item) => <p key={item}>{item}</p>)}</div>
-                    </div>
+                    <details className="source-disclosure">
+                      <summary>Information used for this summary ({agentOutput.evidence_summary.length})</summary>
+                      <div className="citation-list">
+                        {agentOutput.evidence_summary.map((citation, index) => {
+                          const finding = findingsById.get(citation.citation_id);
+                          const document = documentsById.get(citation.citation_id);
+                          const field = fieldsById.get(citation.citation_id);
+                          const caseField = citation.citation_id.startsWith(`case:${caseRecord.id}:`)
+                            ? citation.citation_id.split(":").at(-1)
+                            : null;
+                          let label = "Application information";
+                          let claim = "Used to prepare this summary.";
+
+                          if (finding) {
+                            label = issueLabel(finding.rule_code);
+                            claim = findingText(finding.rule_code, finding.message);
+                          } else if (document) {
+                            label = documentLabel(document.document_type);
+                            claim = `${document.original_filename} was reviewed.`;
+                          } else if (field) {
+                            const sourceDocument = documentsById.get(field.document_id);
+                            label = issueLabel(field.field_name);
+                            claim = `${String(field.normalized_value)}${sourceDocument ? `, found in ${documentLabel(sourceDocument.document_type)}` : ""}.`;
+                          } else if (citation.citation_id.startsWith("policy:")) {
+                            label = "Document checklist";
+                            claim = "The standard application checklist was used.";
+                          } else if (caseField && caseEvidence[caseField]) {
+                            ({ label, claim } = caseEvidence[caseField]);
+                          }
+
+                          return (
+                            <div key={`${citation.citation_id}-${index}`}>
+                              <span>{index + 1}</span>
+                              <p><strong>{label}</strong>{claim}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
                   </div>
                 ) : (
-                  <div className="agent-empty"><Robot size={25} weight="duotone" /><strong>No bounded review saved</strong><span>Run the agent after deterministic checks finish.</span></div>
+                  <div className="agent-empty"><ClipboardText size={26} weight="duotone" /><strong>Summary not ready</strong><span>Check the documents, then refresh the summary.</span></div>
                 )}
               </section>
             </div>
@@ -405,109 +479,107 @@ export default function CaseWorkspacePage() {
             <aside className="review-rail">
               {agentOutput?.follow_up_draft ? (
                 <section className="draft-editor">
-                  <span className="mono-label">Prepared follow-up</span>
-                  <h2>Edit before use</h2>
-                  <p>The agent prepared this draft from missing-information findings. OpsLedger cannot send it.</p>
-                  <textarea className="textarea" value={draft} onChange={(event) => setDraft(event.target.value)} />
-                  <div className="draft-boundary"><Warning size={14} /> Sending is disabled by design.</div>
-                  <button type="button" className="button button-primary" onClick={saveDraft} disabled={Boolean(busy) || publicWritesLocked} title={publicWritesLocked ? "Reviewer authorization required" : undefined}>
+                  <h2>Message draft</h2>
+                  <p>Review the wording before copying it into your email.</p>
+                  <textarea aria-label="Message draft" className="textarea" value={draft} onChange={(event) => setDraft(event.target.value)} />
+                  <div className="draft-boundary"><Warning size={15} /> OpsLedger does not send email.</div>
+                  <button type="button" className="button button-primary" onClick={saveDraft} disabled={Boolean(busy) || publicWritesLocked}>
                     {busy === "draft" ? <SpinnerGap className="spinner" size={15} /> : <NotePencil size={15} />}
-                    Save reviewer edit
+                    Save draft
                   </button>
                 </section>
               ) : null}
 
               <section className="review-controls">
-                <span className="mono-label">Human controls</span>
-                <h2>Choose the workflow route</h2>
-                <p>Every action requires a rationale and becomes part of the ledger.</p>
+                <h2>Next step</h2>
+                <p>Choose what should happen with this application.</p>
                 {caseRecord.stage !== "APPROVED_FOR_NEXT_STAGE" && caseRecord.stage !== "CLOSED" ? (
                   <>
                     {caseRecord.stage !== "NEEDS_INFORMATION" ? (
                       <button type="button" onClick={() => setDecision({
                         actionType: "REQUEST_INFORMATION",
-                        title: "Move this case to needs information?",
-                        detail: "Use this when the current package cannot support continued review. No follow-up will be sent automatically.",
-                        confirmLabel: "Record information request",
-                      })}><Info size={17} /><span><strong>Request information</strong><small>Hold for updated evidence</small></span><ArrowRight size={14} /></button>
+                        title: "Ask for more information?",
+                        detail: "Use the message draft or contact the business after you save this step.",
+                        confirmLabel: "Save request",
+                      })}><Info size={18} /><span><strong>Ask for information</strong><small>Wait for updated documents</small></span><ArrowRight size={15} /></button>
                     ) : null}
                     {caseRecord.stage !== "MANUAL_INVESTIGATION" ? (
                       <button type="button" onClick={() => setDecision({
                         actionType: "SEND_TO_MANUAL_INVESTIGATION",
-                        title: "Hold for manual investigation?",
-                        detail: "Use this for identity, duplication, or evidence conflicts that require a person outside the bounded review.",
-                        confirmLabel: "Record investigation hold",
+                        title: "Send this for a closer look?",
+                        detail: "Use this when the documents do not match or another reviewer needs to investigate.",
+                        confirmLabel: "Send for review",
                         tone: "danger",
-                      })}><MagnifyingGlass size={17} /><span><strong>Manual investigation</strong><small>Escalate an evidence conflict</small></span><ArrowRight size={14} /></button>
+                      })}><MagnifyingGlass size={18} /><span><strong>Send for a closer look</strong><small>Ask another reviewer to investigate</small></span><ArrowRight size={15} /></button>
                     ) : null}
                   </>
                 ) : (
-                  <div className="control-complete"><CheckCircle size={20} /><span><strong>Human action recorded</strong><small>See the audit trail for rationale.</small></span></div>
+                  <div className="control-complete"><CheckCircle size={21} /><span><strong>Decision saved</strong><small>Open History to read the note.</small></span></div>
                 )}
               </section>
 
               <section className="contact-block">
-                <span className="mono-label">Applicant contact</span>
+                <span>Contact</span>
                 <strong>{caseRecord.contact_name}</strong>
                 <a href={`mailto:${caseRecord.contact_email}`}>{caseRecord.contact_email}</a>
-                <small>External contact only. OpsLedger does not send.</small>
+                <small>Opens in your email app.</small>
               </section>
             </aside>
           </div>
         ) : null}
 
-        {tab === "evidence" ? (
+        {tab === "documents" ? (
           <div className="evidence-layout">
             <section>
               <div className="section-heading">
-                <div><h2>Stored documents</h2><p>Private evidence with hash, parser status, and source metadata.</p></div>
+                <div><h2>Documents</h2><p>Open a file to review it.</p></div>
               </div>
               <div className="document-list">
                 {caseRecord.documents.map((document) => (
-                  <a key={document.id} href={assetUrl(`/cases/${caseRecord.id}/documents/${document.id}`)} className="document-row">
-                    <span className="document-icon"><File size={19} weight="duotone" /></span>
-                    <span><strong>{document.original_filename}</strong><small>{sentenceCase(document.document_type)} · {document.page_count ? `${document.page_count} page${document.page_count === 1 ? "" : "s"}` : document.mime_type}</small></span>
-                    <code>{shortHash(document.sha256)}</code>
-                    <span className="extraction-ok"><Check size={12} /> {sentenceCase(document.extraction_status)}</span>
-                    <DownloadSimple size={16} />
+                  <a key={document.id} href={assetUrl(`/cases/${caseRecord.id}/documents/${document.id}`)} className="document-row" target="_blank" rel="noreferrer">
+                    <span className="document-icon"><File size={20} weight="duotone" /></span>
+                    <span><strong>{document.original_filename}</strong><small>{documentLabel(document.document_type)} · {document.page_count ? `${document.page_count} page${document.page_count === 1 ? "" : "s"}` : fileTypeLabel(document.mime_type)}</small></span>
+                    <span className="extraction-ok"><Check size={13} /> Ready</span>
+                    <DownloadSimple size={17} />
                   </a>
                 ))}
               </div>
             </section>
             <section className="extracted-section">
               <div className="section-heading">
-                <div><h2>Extracted fields</h2><p>Normalized values remain linked to their source locator.</p></div>
-                <span className="mono-label">{sortedFields.length} values</span>
+                <div><h2>Details found in the documents</h2><p>Check these values against the original files.</p></div>
+                <span className="item-count">{sortedFields.length} details</span>
               </div>
               <div className="field-ledger">
-                <div className="field-ledger-head"><span>Field</span><span>Normalized value</span><span>Source</span><span>Confidence</span></div>
-                {sortedFields.map((field) => (
-                  <div key={field.id}>
-                    <strong>{sentenceCase(field.field_name)}</strong>
-                    <span>{String(field.normalized_value)}</span>
-                    <code>{field.source_locator}</code>
-                    <span>{Math.round(field.confidence * 100)}%</span>
-                  </div>
-                ))}
+                <div className="field-ledger-head"><span>Detail</span><span>Value</span><span>Found in</span></div>
+                {sortedFields.map((field) => {
+                  const sourceDocument = documentsById.get(field.document_id);
+                  return (
+                    <div key={field.id}>
+                      <strong>{issueLabel(field.field_name)}</strong>
+                      <span>{["bank_ending_balance", "revenue_computed_total", "revenue_declared_total"].includes(field.field_name) ? money(String(field.normalized_value), caseRecord.currency) : String(field.normalized_value)}</span>
+                      <span>{sourceDocument ? documentLabel(sourceDocument.document_type) : "Document"} · {sourceLabel(field.source_locator)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           </div>
         ) : null}
 
-        {tab === "audit" ? (
+        {tab === "history" ? (
           <section className="audit-case-section">
             <div className="section-heading">
-              <div><h2>Append-only case history</h2><p>Actors, transitions, and correlations in newest-first order.</p></div>
-              <span className="mono-label">{caseRecord.audit_events.length} events</span>
+              <div><h2>Application history</h2><p>Newest updates appear first.</p></div>
+              <span className="item-count">{caseRecord.audit_events.length} updates</span>
             </div>
             <div className="case-audit-list">
               {[...caseRecord.audit_events].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((event) => (
                 <div key={event.id}>
                   <span className={`audit-actor actor-${event.actor_type}`}>
-                    {event.actor_type === "agent" ? <Robot size={16} /> : event.actor_type === "user" ? <UserCircle size={16} /> : <ShieldCheck size={16} />}
+                    {event.actor_type === "user" ? <UserCircle size={17} /> : <ClockCounterClockwise size={17} />}
                   </span>
-                  <div><strong>{event.summary}</strong><p>{sentenceCase(event.event_type)} · {event.actor_id}</p></div>
-                  <code>{event.correlation_id.slice(0, 18)}{event.correlation_id.length > 18 ? "…" : ""}</code>
+                  <div><strong>{eventLabel(event.event_type, event.summary)}</strong><p>{actorLabel(event.actor_type)}</p></div>
                   <time>{dateTime(event.created_at)}</time>
                 </div>
               ))}
@@ -518,9 +590,9 @@ export default function CaseWorkspacePage() {
 
       <DecisionDialog
         open={Boolean(decision)}
-        title={decision?.title ?? "Record reviewer action"}
-        detail={decision?.detail ?? "Review the evidence before continuing."}
-        confirmLabel={decision?.confirmLabel ?? "Record action"}
+        title={decision?.title ?? "Save this step?"}
+        detail={decision?.detail ?? "Check the application before continuing."}
+        confirmLabel={decision?.confirmLabel ?? "Save"}
         tone={decision?.tone}
         busy={busy === "decision"}
         locked={publicWritesLocked}
@@ -536,14 +608,14 @@ function FindingRow({ finding, onResolve }: { finding: Finding; onResolve: () =>
   return (
     <div className={`finding-row ${resolved ? "resolved" : ""}`}>
       <span className={`finding-icon severity-${finding.severity.toLowerCase()}`}>
-        {resolved ? <CheckCircle size={19} /> : <WarningCircle size={19} />}
+        {resolved ? <CheckCircle size={20} /> : <WarningCircle size={20} />}
       </span>
       <div>
-        <span className="finding-meta"><code>{finding.rule_code}</code><i>{finding.severity}</i>{resolved ? <i>Resolved</i> : null}</span>
-        <strong>{finding.message}</strong>
-        {finding.resolution_note ? <p>Resolution: {finding.resolution_note}</p> : null}
+        <strong>{issueLabel(finding.rule_code)}</strong>
+        <p>{findingText(finding.rule_code, finding.message)}</p>
+        {finding.resolution_note ? <p>Note: {finding.resolution_note}</p> : null}
       </div>
-      {!resolved ? <button type="button" className="button button-quiet" onClick={onResolve}>Record note</button> : null}
+      {!resolved ? <button type="button" className="button button-quiet" onClick={onResolve}>Add note</button> : null}
     </div>
   );
 }

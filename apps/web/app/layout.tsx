@@ -20,8 +20,7 @@ export const metadata: Metadata = {
     default: "OpsLedger AI",
     template: "%s · OpsLedger AI",
   },
-  description:
-    "Evidence-grounded financing-readiness operations for Caribbean MSMEs.",
+  description: "A clear workspace for reviewing Caribbean MSME applications.",
   robots: { index: false, follow: false },
 };
 

@@ -9,8 +9,8 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
             <p className="eyebrow">OpsLedger AI</p>
             <h1>The workspace could not load.</h1>
             <p>
-              Your case data has not been changed. Try loading the workspace again; if the issue
-              continues, use the correlation ID from the API response when reporting it.
+              Your application data has not been changed. Try loading the workspace again. If it
+              still does not work, ask your support contact for help.
             </p>
             <button className="button primary" type="button" onClick={reset}>
               Try again

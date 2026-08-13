@@ -72,3 +72,37 @@ def test_follow_up_draft_is_rejected_outside_needs_information(context: TestCont
     errors = agent_module._validate_grounding(output, agent_context, case)
 
     assert "follow_up_draft must be null unless the route is NEEDS_INFORMATION" in errors
+
+
+def test_reviewer_copy_uses_plain_language(context: TestContext) -> None:
+    assert seed_demo_data(context.db, context.settings)
+    case = context.db.scalar(select(Case).where(Case.reference == "OPS-2026-0002"))
+    assert case is not None
+    agent_context, _ = collect_agent_context(context.db, case)
+
+    output = agent_module._deterministic_recommendation(case, agent_context)
+    reviewer_copy = " ".join(
+        [
+            output.case_summary,
+            output.recommendation_reason,
+            output.follow_up_draft or "",
+            *output.limitations,
+            *(item.label for item in output.evidence_summary),
+            *(item.claim for item in output.evidence_summary),
+            *(item.explanation for item in output.unresolved_findings),
+            *(item.item for item in output.missing_information),
+            *(item.reason for item in output.missing_information),
+        ]
+    ).lower()
+
+    for implementation_term in (
+        "bounded",
+        "deterministic",
+        "schema",
+        "synthetic",
+        "validation",
+        "workflow readiness",
+        "readiness score",
+    ):
+        assert implementation_term not in reviewer_copy
+    assert "ownership form" in reviewer_copy

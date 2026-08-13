@@ -23,11 +23,11 @@ A bounded agent then receives five typed, read-only evidence bundles. It prepare
 
 The repository includes three reproducible synthetic businesses:
 
-- Island Harvest Foods Ltd. has a complete, current, internally consistent package. It reaches Ready for Human Review with a 100/100 transparent checklist and no open finding.
+- Island Harvest Foods Ltd. has a complete, current, internally consistent package. It reaches Ready for Review with all four required documents and no open issue.
 - Blue Shore Repairs omits an ownership declaration and supplies 286-day-old revenue evidence against a 180-day demonstration policy. It reaches Needs Information and receives an editable—but unsent—follow-up draft.
 - Caribbean Green Logistics Ltd. has a legal-name mismatch and reuses an open case’s registration number. It reaches Manual Investigation without the agent inventing a conclusion.
 
-Reviewers can inspect extracted values and source locators, deterministic findings, the agent’s evidence citations and limitations, every state transition, human rationale, correlation IDs, and a downloadable PDF review packet.
+Reviewers can inspect the original documents, extracted values, plain-language issues, the information used for the review summary, every saved update, reviewer notes, and a downloadable PDF review packet. Implementation details stay out of the main workflow.
 
 The signed-out showcase is intentionally read-only. Every mutating API route requires a server-side reviewer token, while the interface keeps the intake, rerun, editing, and approval boundaries visible. This protects the seeded demonstration without pretending that a shared token is the named-user identity system required for a pilot.
 
@@ -43,7 +43,7 @@ The interface is built with Next.js and TypeScript. FastAPI, Pydantic, SQLAlchem
 
 Local demonstrations can call `gpt-5.6-luna` at `xhigh` through an authenticated Codex installation, inside an ephemeral read-only directory. The hosted demonstration uses a transparent deterministic provider because the local Codex session is not available in Railway. Every run stores provider identity; no fallback is presented as model output.
 
-The current measured build passes 33 backend tests, three frontend unit tests, six Chrome/Chromium browser flows, 20 live-system assertions, and the optimized production build. Railway built both application containers and serves the public interface and API against managed PostgreSQL. The seeded set detects all four intentionally introduced deterministic issues. These are synthetic fixture results, not a claim of real-document accuracy.
+The current measured build passes 35 backend tests, seven frontend unit tests, seven Chrome/Chromium browser flows, 20 live-system assertions, and the optimized production build. Railway built both application containers and serves the public interface and API against managed PostgreSQL. The seeded set detects all four intentionally introduced deterministic issues. These are synthetic fixture results, not a claim of real-document accuracy.
 
 ## Business model and go-to-market
 

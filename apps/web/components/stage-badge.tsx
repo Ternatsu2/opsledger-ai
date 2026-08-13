@@ -1,5 +1,5 @@
 import type { CaseStage } from "@/lib/types";
-import { sentenceCase } from "@/lib/format";
+import { stageLabel } from "@/lib/format";
 
 const tones: Record<CaseStage, string> = {
   DRAFT: "stage-neutral",
@@ -19,7 +19,7 @@ export function StageBadge({ stage }: { stage: CaseStage }) {
   return (
     <span className={`stage-badge ${tones[stage]}`}>
       <i aria-hidden="true" />
-      {sentenceCase(stage)}
+      {stageLabel(stage)}
     </span>
   );
 }

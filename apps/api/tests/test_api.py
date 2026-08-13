@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
+import fitz
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
@@ -44,6 +45,37 @@ def test_api_exposes_cases_utc_dates_and_cors(context: TestContext) -> None:
     assert cases.json()[0]["last_action"]
     assert cors.status_code == 200
     assert cors.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+
+
+def test_review_packet_uses_plain_reviewer_language(context: TestContext) -> None:
+    seed_demo_data(context.db, context.settings)
+    case = context.db.scalar(select(Case).where(Case.reference == "OPS-2026-0002"))
+    assert case is not None
+
+    def override_db() -> Generator:
+        yield context.db
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        with TestClient(app) as client:
+            response = client.get(f"/api/v1/cases/{case.id}/packet.pdf")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    with fitz.open(stream=response.content, filetype="pdf") as packet:
+        packet_text = " ".join(page.get_text() for page in packet)
+    assert "Application review" in packet_text
+    assert "Items to check" in packet_text
+    assert "Missing document" in packet_text
+    assert "Recent history" in packet_text
+    for implementation_term in (
+        "Deterministic findings",
+        "Agent recommendation",
+        "Proposed workflow action",
+        "readiness score",
+    ):
+        assert implementation_term not in packet_text
 
 
 def test_review_action_endpoint_requires_rationale(context: TestContext) -> None:

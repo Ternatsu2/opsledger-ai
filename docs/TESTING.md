@@ -7,15 +7,15 @@ Local verification on 2026-08-13 AST completed with:
 | Layer | Result | Coverage purpose |
 | --- | --- | --- |
 | TypeScript and Python static checks | pass | TypeScript compile and Ruff rules |
-| Frontend unit tests | 3 passed | stage/amount/date presentation helpers |
-| Backend tests | 33 passed | parsers, storage, rules, state, API, agent contract, audit, retries, export, packaged runtime, write authorization |
-| Playwright | 6 passed | three case outcomes, approval guard, unsent draft, intake validation, mobile overflow |
+| Frontend unit tests | 7 passed | plain labels, document counts, file types, prepared messages, amount/date presentation |
+| Backend tests | 35 passed | parsers, storage, rules, state, API, agent contract, plain-language packet, audit, retries, export, packaged runtime, write authorization |
+| Playwright | 7 passed | plain-language queue and case outcomes, approval guard, unsent draft, intake validation, Activity disclosure, mobile layouts |
 | Live API verification | 20 assertions passed | health/readiness, seeded contracts, PDF, audit and safety flags |
 | Next.js production build | pass | optimized production compilation and route generation |
 | npm dependency audit | 0 known vulnerabilities | direct and transitive JavaScript dependency scan |
 | Secret scan | pass | detect-secrets over intended tracked text source files |
 
-The backend run prints 11 warnings from PyMuPDF’s generated bindings and library internals. They do not represent failed assertions. No application test warning is suppressed in the table above.
+The backend run prints 12 warnings from PyMuPDF’s generated bindings and library internals. They do not represent failed assertions. No application test warning is suppressed in the table above.
 
 ## Commands
 
@@ -60,6 +60,7 @@ Automated tests prove that:
 - the route remains deterministic;
 - the tool count stays below the demonstration limit of eight;
 - repeat API commands with the same idempotency key return the same run.
+- reviewer-facing summary fields and the PDF packet omit internal model, schema, rule, route, and validation terminology.
 
 A strict release refresh invoked local `gpt-5.6-luna` at `xhigh` for all three cases and saved only validated outputs:
 
@@ -77,12 +78,13 @@ Playwright runs desktop tests in installed Chrome and a mobile test with the Pix
 
 - all three required outcomes appear on the dashboard;
 - Case A cannot be approved without a rationale;
-- Case B displays both exact findings, keeps the follow-up editable, and has no send control;
-- Case C displays both conflict rule codes;
+- Case B explains both issues in plain language, keeps the follow-up editable, and has no email-send control;
+- Case C explains both conflicts without exposing internal rule codes;
 - required intake errors render after submission;
-- the mobile document width does not exceed the viewport and primary navigation remains visible.
+- implementation terms are absent from the primary queue and Activity page;
+- Home, Applications, Add application, Activity, and a full case review fit the mobile viewport with primary navigation visible.
 
-A separate manual pass inspected dashboard, list, intake, all three workspaces, evidence tabs, the approval dialog, trust/audit, and mobile layouts. The app console contained no product errors.
+A separate manual pass inspected Home, Applications, Add application, all three application workspaces, Documents, History, the approval dialog, Activity, and 390-pixel mobile layouts. It also checked single-item navigation state, readable document metadata, prepared-message wording, and optional source details. The app console contained no product errors.
 
 ## Deployed release evidence
 
