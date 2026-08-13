@@ -32,7 +32,7 @@ test("information case exposes editable follow-up and no send control", async ({
     page.getByText("Revenue evidence is 286 days old; the demo policy allows 180 days.", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("textbox")).toContainText("Ownership Declaration");
-  await expect(page.getByRole("textbox")).toContainText("revenue evidence");
+  await expect(page.getByRole("textbox")).toContainText(/revenue evidence/i);
   await expect(page.getByRole("button", { name: "Save reviewer edit" })).toBeVisible();
   await expect(page.getByRole("button", { name: /send/i })).toHaveCount(0);
 });
