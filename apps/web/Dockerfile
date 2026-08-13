@@ -7,7 +7,6 @@ RUN npm ci
 FROM node:24.16.0-bookworm-slim AS builder
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
 COPY package.json package-lock.json ./
 COPY apps/web ./apps/web
 ARG NEXT_PUBLIC_API_URL
