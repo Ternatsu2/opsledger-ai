@@ -1,0 +1,77 @@
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: opsledger
+      POSTGRES_USER: opsledger
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opsledger -d opsledger"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - opsledger-postgres:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://opsledger:${POSTGRES_PASSWORD}@database:5432/opsledger
+      ALLOWED_ORIGINS: http://localhost:3000
+      APP_BASE_URL: http://localhost:3000
+      API_BASE_URL: http://localhost:8000
+      MODEL_PROVIDER: deterministic
+      MODEL_STRICT: "false"
+      SEED_DEMO: "true"
+      LOCAL_DATA_DIR: /data
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "uv",
+          "run",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "8000:8000"
+    volumes:
+      - opsledger-files:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "3000:3000"
+
+volumes:
+  opsledger-postgres:
+  opsledger-files:

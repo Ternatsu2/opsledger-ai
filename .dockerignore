@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!.env.example
+node_modules
+apps/web/.next
+apps/web/playwright-report
+apps/web/test-results
+apps/api/.venv
+apps/api/.pytest_cache
+apps/api/.ruff_cache
+**/__pycache__
+data
+coverage
+htmlcov
+*.log
+.DS_Store

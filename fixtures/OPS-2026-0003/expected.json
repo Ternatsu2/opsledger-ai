@@ -1,0 +1,17 @@
+{
+  "expected_stage": "MANUAL_INVESTIGATION",
+  "expected_completeness_score": 100,
+  "expected_findings": [
+    "LEGAL_NAME_MISMATCH",
+    "DUPLICATE_REGISTRATION"
+  ],
+  "expected_extracted_values": {
+    "legal_business_name": "Caribbean Green Freight Services Ltd.",
+    "registration_number": "ABR-4421-A",
+    "jurisdiction": "Antigua and Barbuda",
+    "revenue_computed_total": "720000",
+    "revenue_as_of_date": "2026-07-31",
+    "bank_as_of_date": "2026-07-31",
+    "ownership_declared": true
+  }
+}

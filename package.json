@@ -1,0 +1,28 @@
+{
+  "name": "opsledger-ai",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c yellow,cyan \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && uv run uvicorn opsledger.main:app --reload --port 8000",
+    "dev:web": "npm run dev --workspace @opsledger/web",
+    "build": "npm run build --workspace @opsledger/web",
+    "lint": "npm run lint --workspace @opsledger/web && cd apps/api && uv run ruff check .",
+    "test": "npm run test --workspace @opsledger/web && cd apps/api && uv run pytest",
+    "test:e2e": "npm run test:e2e --workspace @opsledger/web",
+    "security:scan": "sh scripts/check_secrets.sh",
+    "migrate": "cd apps/api && uv run alembic upgrade head",
+    "seed": "cd apps/api && uv run python -m opsledger.seed",
+    "fixtures": "cd apps/api && uv run python ../../scripts/generate_fixtures.py",
+    "verify": "cd apps/api && uv run python ../../scripts/verify_demo.py"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.4"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

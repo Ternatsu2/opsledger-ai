@@ -1,0 +1,79 @@
+[
+  {
+    "case_reference": "OPS-2026-0001",
+    "document_type": "REGISTRATION_EVIDENCE",
+    "path": "fixtures/OPS-2026-0001/ops-2026-0001-registration.pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 2094
+  },
+  {
+    "case_reference": "OPS-2026-0001",
+    "document_type": "REVENUE_STATEMENT",
+    "path": "fixtures/OPS-2026-0001/ops-2026-0001-revenue.xlsx",
+    "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size_bytes": 5417
+  },
+  {
+    "case_reference": "OPS-2026-0001",
+    "document_type": "BANK_STATEMENT",
+    "path": "fixtures/OPS-2026-0001/ops-2026-0001-bank.csv",
+    "mime_type": "text/csv",
+    "size_bytes": 304
+  },
+  {
+    "case_reference": "OPS-2026-0001",
+    "document_type": "OWNERSHIP_DECLARATION",
+    "path": "fixtures/OPS-2026-0001/ops-2026-0001-ownership.pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 2065
+  },
+  {
+    "case_reference": "OPS-2026-0002",
+    "document_type": "REGISTRATION_EVIDENCE",
+    "path": "fixtures/OPS-2026-0002/ops-2026-0002-registration.pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 2081
+  },
+  {
+    "case_reference": "OPS-2026-0002",
+    "document_type": "REVENUE_STATEMENT",
+    "path": "fixtures/OPS-2026-0002/ops-2026-0002-revenue.xlsx",
+    "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size_bytes": 5422
+  },
+  {
+    "case_reference": "OPS-2026-0002",
+    "document_type": "BANK_STATEMENT",
+    "path": "fixtures/OPS-2026-0002/ops-2026-0002-bank.csv",
+    "mime_type": "text/csv",
+    "size_bytes": 304
+  },
+  {
+    "case_reference": "OPS-2026-0003",
+    "document_type": "REGISTRATION_EVIDENCE",
+    "path": "fixtures/OPS-2026-0003/ops-2026-0003-registration.pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 2104
+  },
+  {
+    "case_reference": "OPS-2026-0003",
+    "document_type": "REVENUE_STATEMENT",
+    "path": "fixtures/OPS-2026-0003/ops-2026-0003-revenue.xlsx",
+    "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size_bytes": 5417
+  },
+  {
+    "case_reference": "OPS-2026-0003",
+    "document_type": "BANK_STATEMENT",
+    "path": "fixtures/OPS-2026-0003/ops-2026-0003-bank.csv",
+    "mime_type": "text/csv",
+    "size_bytes": 304
+  },
+  {
+    "case_reference": "OPS-2026-0003",
+    "document_type": "OWNERSHIP_DECLARATION",
+    "path": "fixtures/OPS-2026-0003/ops-2026-0003-ownership.pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 2067
+  }
+]

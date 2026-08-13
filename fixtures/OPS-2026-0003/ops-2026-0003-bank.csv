@@ -1,0 +1,5 @@
+date,description,amount,balance,currency
+2026-07-28,Customer receipts · OPS-2026-0003,18450.00,112450.00,XCD
+2026-07-29,Supplier payment · OPS-2026-0003,-7280.00,105170.00,XCD
+2026-07-30,Payroll · OPS-2026-0003,-9400.00,95770.00,XCD
+2026-07-31,Card settlements · OPS-2026-0003,12620.00,108390.00,XCD

@@ -1,0 +1,16 @@
+{
+  "expected_stage": "NEEDS_INFORMATION",
+  "expected_completeness_score": 85,
+  "expected_findings": [
+    "REQUIRED_DOCUMENT_MISSING",
+    "FINANCIAL_EVIDENCE_STALE"
+  ],
+  "expected_extracted_values": {
+    "legal_business_name": "Blue Shore Repairs",
+    "registration_number": "LCR-7319-R",
+    "jurisdiction": "Saint Lucia",
+    "revenue_computed_total": "210000",
+    "revenue_as_of_date": "2025-10-31",
+    "bank_as_of_date": "2025-10-31"
+  }
+}
