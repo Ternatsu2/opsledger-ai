@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:0.11.17-python3.12-bookworm-slim
+FROM ghcr.io/astral-sh/uv:0.11.32-python3.12-trixie-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
