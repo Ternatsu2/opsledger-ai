@@ -2097,9 +2097,14 @@ button:disabled {
 
 .workspace-identity {
   display: flex;
+  flex: 1 1 auto;
   min-width: 0;
   align-items: center;
   gap: 15px;
+}
+
+.workspace-identity > div {
+  min-width: 0;
 }
 
 .workspace-identity > span {

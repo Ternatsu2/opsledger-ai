@@ -172,10 +172,22 @@ export function plainMessageDraft(value: string): string {
     .replaceAll(/Ownership Declaration/g, "ownership form")
     .replaceAll(/revenue evidence/gi, "revenue record")
     .replaceAll(
-      /the demo policy allows evidence up to (\d+) days old/gi,
-      "revenue records should be no more than $1 days old",
+      /([a-z][a-z ]+) is required by the synthetic demo policy/gi,
+      "$1 is missing",
     )
-    .replaceAll(". revenue records", ". Revenue records")
+    .replaceAll(
+      /([a-z][a-z ]+) is required by the document checklist/gi,
+      "$1 is missing",
+    )
+    .replaceAll(
+      /the demo policy allows evidence up to (\d+) days old/gi,
+      "please send a revenue record dated within the last $1 days",
+    )
+    .replaceAll(
+      /the demo policy allows (\d+) days/gi,
+      "please send one dated within the last $1 days",
+    )
+    .replaceAll(". please", ". Please")
     .replaceAll(/the synthetic demo policy/gi, "the document checklist");
 }
 

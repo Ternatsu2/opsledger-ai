@@ -31,6 +31,11 @@ test("information request is plain, editable, and cannot be sent by the app", as
   await page.goto("/cases");
   await page.getByRole("link", { name: /Blue Shore Repairs/ }).click();
 
+  const titleFits = await page.getByRole("heading", { name: "Blue Shore Repairs" }).evaluate(
+    (heading) => heading.scrollWidth <= heading.clientWidth,
+  );
+  expect(titleFits, "the business name should not be clipped on desktop").toBe(true);
+
   const itemsToCheck = page.locator(".finding-list");
   await expect(itemsToCheck.getByText("Missing document", { exact: true })).toBeVisible();
   await expect(itemsToCheck.getByText("Add the missing ownership form.", { exact: true })).toBeVisible();
@@ -38,6 +43,8 @@ test("information request is plain, editable, and cannot be sent by the app", as
   await expect(itemsToCheck.getByText(/The revenue record is \d+ days old\. Add a newer one\./)).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Message draft" })).toContainText(/ownership/i);
   await expect(page.getByRole("textbox")).toContainText(/revenue record/i);
+  await expect(page.getByRole("textbox")).toContainText(/dated within the last 180 days/i);
+  await expect(page.getByRole("textbox")).not.toContainText(/demo policy|document checklist/i);
   await expect(page.getByRole("button", { name: "Save draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Send email", exact: true })).toHaveCount(0);
   await expect(page.getByText("REQUIRED_DOCUMENT_MISSING", { exact: true })).toHaveCount(0);

@@ -62,7 +62,12 @@ describe("format helpers", () => {
     expect(plainMessageDraft(
       "We reviewed the financing-readiness package. Please provide the Ownership Declaration and updated revenue evidence. The demo policy allows evidence up to 180 days old.",
     )).toBe(
-      "We reviewed the application. Please provide the ownership form and updated revenue record. Revenue records should be no more than 180 days old.",
+      "We reviewed the application. Please provide the ownership form and updated revenue record. Please send a revenue record dated within the last 180 days.",
+    );
+    expect(plainMessageDraft(
+      "- ownership form is required by the synthetic demo policy.\n- Revenue evidence is 286 days old; the demo policy allows 180 days.",
+    )).toBe(
+      "- ownership form is missing.\n- revenue record is 286 days old; please send one dated within the last 180 days.",
     );
   });
 });
