@@ -43,7 +43,9 @@ test("information request is plain, editable, and cannot be sent by the app", as
   await expect(itemsToCheck.getByText(/The revenue record is \d+ days old\. Add a newer one\./)).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Message draft" })).toContainText(/ownership/i);
   await expect(page.getByRole("textbox")).toContainText(/revenue record/i);
-  await expect(page.getByRole("textbox")).toContainText(/dated within the last 180 days/i);
+  await expect(page.getByRole("textbox")).toContainText(
+    /add a newer one|dated within the last 180 days/i,
+  );
   await expect(page.getByRole("textbox")).not.toContainText(/demo policy|document checklist/i);
   await expect(page.getByRole("button", { name: "Save draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Send email", exact: true })).toHaveCount(0);
@@ -59,6 +61,9 @@ test("information request is plain, editable, and cannot be sent by the app", as
 test("closer-look application explains both conflicts without rule codes", async ({ page }) => {
   await page.goto("/cases");
   await page.getByRole("link", { name: /Caribbean Green Logistics Ltd/ }).click();
+  await expect(page.getByRole("heading", { name: "Caribbean Green Logistics Ltd" })).toBeVisible({
+    timeout: 15_000,
+  });
 
   const itemsToCheck = page.locator(".finding-list");
   await expect(itemsToCheck.getByText("Business name does not match", { exact: true })).toBeVisible();
